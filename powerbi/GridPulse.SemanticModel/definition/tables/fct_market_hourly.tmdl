@@ -1,0 +1,168 @@
+table fct_market_hourly
+	column ts_utc
+		dataType: dateTime
+		formatString: yyyy-MM-dd HH:mm
+		summarizeBy: none
+		sourceColumn: ts_utc
+
+	column price_eur_mwh
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: price_eur_mwh
+
+	column load_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: load_mwh
+
+	column residual_load_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: residual_load_mwh
+
+	column gen_wind_onshore_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_wind_onshore_mwh
+
+	column gen_wind_offshore_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_wind_offshore_mwh
+
+	column gen_solar_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_solar_mwh
+
+	column gen_biomass_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_biomass_mwh
+
+	column gen_hydro_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_hydro_mwh
+
+	column gen_other_renewable_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_other_renewable_mwh
+
+	column gen_lignite_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_lignite_mwh
+
+	column gen_hard_coal_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_hard_coal_mwh
+
+	column gen_gas_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_gas_mwh
+
+	column gen_nuclear_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_nuclear_mwh
+
+	column gen_other_conventional_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_other_conventional_mwh
+
+	column gen_pumped_storage_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_pumped_storage_mwh
+
+	column gen_renewable_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_renewable_mwh
+
+	column gen_conventional_mwh
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: gen_conventional_mwh
+
+	column renewable_share
+		dataType: double
+		formatString: 0.0%
+		summarizeBy: none
+		sourceColumn: renewable_share
+
+	measure 'Avg Price' = AVERAGE(fct_market_hourly[price_eur_mwh])
+		formatString: #,0.00
+		description: Mean day-ahead price in EUR/MWh over the selected hours.
+
+	measure 'Max Price' = MAX(fct_market_hourly[price_eur_mwh])
+		formatString: #,0.00
+		description: Highest hourly day-ahead price in EUR/MWh.
+
+	measure 'Min Price' = MIN(fct_market_hourly[price_eur_mwh])
+		formatString: #,0.00
+		description: Lowest hourly day-ahead price in EUR/MWh.
+
+	measure 'Price Volatility' = STDEV.P(fct_market_hourly[price_eur_mwh])
+		formatString: #,0.00
+		description: Standard deviation of hourly prices in EUR/MWh.
+
+	measure 'Negative Price Hours' = CALCULATE(COUNTROWS(fct_market_hourly), fct_market_hourly[price_eur_mwh] < 0)
+		formatString: #,0
+		description: Number of hours with a negative price.
+
+	measure 'Total Load GWh' = DIVIDE(SUM(fct_market_hourly[load_mwh]), 1000)
+		formatString: #,0
+		description: Total grid load in GWh.
+
+	measure 'Renewable Share' = DIVIDE(SUM(fct_market_hourly[gen_renewable_mwh]), SUM(fct_market_hourly[gen_renewable_mwh]) + SUM(fct_market_hourly[gen_conventional_mwh]))
+		formatString: 0.0%
+		description: Renewable generation divided by total generation.
+
+	measure 'Wind Share' = DIVIDE(SUM(fct_market_hourly[gen_wind_onshore_mwh]) + SUM(fct_market_hourly[gen_wind_offshore_mwh]), SUM(fct_market_hourly[gen_renewable_mwh]) + SUM(fct_market_hourly[gen_conventional_mwh]))
+		formatString: 0.0%
+		description: Onshore plus offshore wind divided by total generation.
+
+	measure 'Solar Share' = DIVIDE(SUM(fct_market_hourly[gen_solar_mwh]), SUM(fct_market_hourly[gen_renewable_mwh]) + SUM(fct_market_hourly[gen_conventional_mwh]))
+		formatString: 0.0%
+		description: Solar divided by total generation.
+
+	measure 'Data Freshness h' = DATEDIFF(MAX(fct_market_hourly[ts_utc]), UTCNOW(), HOUR)
+		formatString: #,0
+		description: Hours since the newest market row. The alert threshold is 36.
+
+	measure 'Hours Loaded' = COUNTROWS(fct_market_hourly)
+		formatString: #,0
+		description: Rows in the market fact, one per UTC hour.
+
+	partition fct_market_hourly = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database(PgServer, PgDatabase),
+					Data = Source{[Schema="gold", Item="fct_market_hourly"]}[Data],
+					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+				in
+					Utc

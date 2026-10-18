@@ -1,0 +1,74 @@
+table price_forecast_backtest
+	column ts_utc
+		dataType: dateTime
+		formatString: yyyy-MM-dd HH:mm
+		summarizeBy: none
+		sourceColumn: ts_utc
+
+	column actual
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: actual
+
+	column pred_naive_24h
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: pred_naive_24h
+
+	column pred_naive_168h
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: pred_naive_168h
+
+	column pred_lgbm_calendar_lags
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: pred_lgbm_calendar_lags
+
+	column pred_lgbm_with_weather
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: pred_lgbm_with_weather
+
+	measure 'MAE Naive 24h' = AVERAGEX(price_forecast_backtest, ABS(price_forecast_backtest[actual] - price_forecast_backtest[pred_naive_24h]))
+		formatString: #,0.00
+		description: Mean absolute error of the same-hour-yesterday baseline in EUR/MWh.
+
+	measure 'MAE LightGBM Weather' = AVERAGEX(price_forecast_backtest, ABS(price_forecast_backtest[actual] - price_forecast_backtest[pred_lgbm_with_weather]))
+		formatString: #,0.00
+		description: MAE of the LightGBM model that uses observed weather as a forecast proxy. Optimistic upper bound.
+
+	measure 'MAE LightGBM Calendar' = AVERAGEX(price_forecast_backtest, ABS(price_forecast_backtest[actual] - price_forecast_backtest[pred_lgbm_calendar_lags]))
+		formatString: #,0.00
+		description: MAE of the LightGBM model without weather inputs.
+
+	measure 'RMSE Naive 24h' = SQRT(AVERAGEX(price_forecast_backtest, (price_forecast_backtest[actual] - price_forecast_backtest[pred_naive_24h]) ^ 2))
+		formatString: #,0.00
+		description: Root mean squared error of the same-hour-yesterday baseline.
+
+	measure 'RMSE LightGBM Weather' = SQRT(AVERAGEX(price_forecast_backtest, (price_forecast_backtest[actual] - price_forecast_backtest[pred_lgbm_with_weather]) ^ 2))
+		formatString: #,0.00
+		description: RMSE of the weather model. Optimistic upper bound.
+
+	measure 'MAE Skill vs Naive' = 1 - DIVIDE([MAE LightGBM Weather], [MAE Naive 24h])
+		formatString: 0.0%
+		description: Relative MAE improvement over the naive baseline. Negative means worse than the baseline.
+
+	measure 'Backtest Hours' = COUNTROWS(price_forecast_backtest)
+		formatString: #,0
+		description: Hours in the backtest window.
+
+	partition price_forecast_backtest = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database(PgServer, PgDatabase),
+					Data = Source{[Schema="gold", Item="price_forecast_backtest"]}[Data],
+					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+				in
+					Utc
