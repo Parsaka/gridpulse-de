@@ -66,3 +66,15 @@ On the last 90 days, LightGBM with weather inputs reaches MAE 33.1 vs 36.1 EUR/M
 "same hour yesterday" baseline, **but that uses observed weather as a forecast proxy and is an
 upper bound**; without weather the model is worse than the baseline. Details and limits:
 [docs/model-card.md](docs/model-card.md).
+
+## API and monitoring
+
+```bash
+gridpulse train && docker compose --profile monitoring up -d --build
+curl -H "X-API-Key: dev-local-key" http://localhost:8000/v1/forecast
+```
+
+`/health`, `/ready`, `/v1/prices`, `/v1/forecast` (next-day hourly prices from a DWD MOSMIX weather
+forecast), `/metrics` for Prometheus. Alert rules, Grafana dashboard, the measured load test and a
+documented failure drill are in [docs/runbook.md](docs/runbook.md). The forecast is a portfolio
+demo, not trading advice; see the [model card](docs/model-card.md) for its limits.

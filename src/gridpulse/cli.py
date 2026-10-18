@@ -93,6 +93,10 @@ def train(
         "last_ts": str(df["ts_utc"].max()),
         "test_days": test_days,
     }
+    from gridpulse.ml import artifacts
+
+    chosen = next(r for r in results if r.feature_set == register and r.model is not None)
+    artifacts.save_model(chosen, settings.model_dir, ml_train.ANCHOR, info)
     if not no_mlflow:
         registry.log_run(results, settings.mlflow_tracking_uri, info, register=register)
     summary = {r.name: {k: round(v, 4) for k, v in r.metrics.items()} for r in results}

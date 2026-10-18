@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     adls_account_url: str = ""  # https://<account>.dfs.core.windows.net
     adls_filesystem: str = "bronze"
     mlflow_tracking_uri: str = "sqlite:///mlflow.db"
+    model_dir: Path = Path("./artifacts")
+    api_keys: str = ""  # comma-separated; empty disables the API (fail closed)
+    rate_limit_per_min: int = 60
     warehouse_url: str = (
         "postgresql+psycopg://gridpulse:gridpulse_local_only@localhost:5432/gridpulse"
     )

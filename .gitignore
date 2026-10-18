@@ -29,3 +29,6 @@ dbt/.user.yml
 mlflow.db
 mlruns/
 mlartifacts/
+
+# model artifacts are build outputs
+artifacts/
