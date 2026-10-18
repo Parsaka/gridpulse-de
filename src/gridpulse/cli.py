@@ -47,6 +47,28 @@ def ingest_entsoe_prices(start: Start, end: End):
     log.info("entsoe.ingested", rows=n)
 
 
+@app.command("load-warehouse")
+def load_warehouse():
+    """Upsert bronze Parquet into PostgreSQL (schema bronze) for dbt."""
+    from gridpulse import warehouse
+
+    settings = get_settings()
+    engine = warehouse.get_engine(settings.warehouse_url)
+    warehouse.init_schema(engine)
+    store = make_store(settings)
+    warehouse.load_smard(engine, store)
+    warehouse.load_weather(engine, store)
+
+
+@app.command("sample-data")
+def sample_data(start: str = "2026-01-01", days: int = 7):
+    """Write deterministic SYNTHETIC bronze data (for CI/offline demos; not real data)."""
+    from gridpulse.sample import write_sample_bronze
+
+    write_sample_bronze(make_store(), start, days)
+    log.info("sample.written", start=start, days=days)
+
+
 @app.command("daily")
 def daily(days_back: int = 3):
     """Incremental run: re-load the last N days (idempotent)."""

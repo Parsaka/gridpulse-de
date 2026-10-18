@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_smard_series
+    columns:
+      - name: dataset
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - generation_lignite
+                  - generation_nuclear
+                  - generation_wind_offshore
+                  - generation_hydro
+                  - generation_other_conventional
+                  - generation_other_renewable
+                  - generation_biomass
+                  - generation_wind_onshore
+                  - generation_solar
+                  - generation_hard_coal
+                  - generation_pumped_storage
+                  - generation_gas
+                  - load_total
+                  - load_residual
+                  - price_day_ahead
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [dataset, ts_utc]
+  - name: stg_weather
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [location, ts_utc]
+    columns:
+      - name: wind_speed_kmh
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, max_value: 250}
+  - name: stg_locations
+    columns:
+      - name: location
+        data_tests: [unique, not_null]

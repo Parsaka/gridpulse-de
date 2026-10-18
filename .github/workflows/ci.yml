@@ -50,3 +50,36 @@ jobs:
       - run: terraform fmt -check -recursive
       - run: terraform init -backend=false -input=false
       - run: terraform validate
+
+  dbt:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gridpulse
+          POSTGRES_PASSWORD: gridpulse_local_only
+          POSTGRES_DB: gridpulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gridpulse" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      GRIDPULSE_DATA_DIR: ./data
+      DBT_PROFILES_DIR: dbt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[warehouse,dbt]"
+      - name: Synthetic bronze data, load into Postgres
+        run: |
+          gridpulse sample-data --start 2026-01-01 --days 10
+          gridpulse load-warehouse
+      - name: dbt build (models + tests)
+        working-directory: dbt
+        run: |
+          dbt deps
+          dbt build

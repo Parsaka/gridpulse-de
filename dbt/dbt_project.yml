@@ -1,0 +1,24 @@
+name: gridpulse
+version: "0.1.0"
+config-version: 2
+profile: gridpulse
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  gridpulse:
+    staging:
+      +schema: silver
+      +materialized: view
+    marts:
+      +schema: gold
+      +materialized: table
+
+seeds:
+  gridpulse:
+    +schema: silver
