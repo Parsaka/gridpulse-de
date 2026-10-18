@@ -1,0 +1,9 @@
+subscription_id   = "00000000-0000-0000-0000-000000000000"
+alert_email       = "you@example.com"
+budget_start_date = "2026-11-01T00:00:00Z" # first day of a month
+budget_amount_eur = 10
+
+# Leave false until you have read the free-offer notice in the portal.
+enable_postgres = false
+# postgres_admin_password = "set via TF_VAR_postgres_admin_password, never commit"
+# postgres_allowed_ip     = "203.0.113.7"

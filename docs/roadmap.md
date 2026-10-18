@@ -2,7 +2,7 @@
 
 - [x] **Phase 1 – Ingestion**: SMARD, Bright Sky, ENTSO-E clients → Parquet bronze (idempotent), CLI, tests, CI
 - [x] **Phase 2 – Orchestration**: Airflow DAGs (daily + backfill), retries, failure alerts
-- [ ] **Phase 3 – Azure**: ADLS Gen2 bronze, Azure Database for PostgreSQL, Key Vault; Terraform (azurerm)
+- [~] **Phase 3 – Azure**: Terraform written and validated (ADLS Gen2, Key Vault, Log Analytics, budget, optional Postgres); ADLS storage backend in Python. Not yet applied: needs your Azure account, see docs/azure-setup.md
 - [ ] **Phase 4 – dbt**: bronze/silver/gold, star schema, incremental, tests, freshness, docs, `dbt build` in CI
 - [ ] **Phase 5 – CI/CD**: GitHub Actions → Azure via OIDC, terraform plan, manual-approval deploy, rollback doc
 - [ ] **Phase 6 – ML**: baseline + LightGBM price/load forecast, MLflow, retraining, Evidently drift

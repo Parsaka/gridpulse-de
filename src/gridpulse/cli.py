@@ -6,9 +6,8 @@ import structlog
 import typer
 
 from gridpulse import pipeline
-from gridpulse.config import get_settings
+from gridpulse.config import get_settings, make_store
 from gridpulse.ingestion import brightsky, entsoe, smard
-from gridpulse.storage import BronzeStore
 
 app = typer.Typer(help="GridPulse DE ingestion CLI", no_args_is_help=True)
 log = structlog.get_logger()
@@ -44,7 +43,7 @@ def ingest_entsoe_prices(start: Start, end: End):
         pd.Timestamp(pipeline.as_utc(start)),
         pd.Timestamp(pipeline.as_utc(end)),
     )
-    n = BronzeStore(settings.bronze_dir).write(df, "entsoe", "price_day_ahead")
+    n = make_store(settings).write(df, "entsoe", "price_day_ahead")
     log.info("entsoe.ingested", rows=n)
 
 
