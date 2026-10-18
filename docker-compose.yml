@@ -1,3 +1,23 @@
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: docker/airflow/Dockerfile
+  image: gridpulse-airflow:local
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://gridpulse:gridpulse_local_only@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+    # local-development-only key; real deployments read secrets from Key Vault
+    AIRFLOW__CORE__FERNET_KEY: "Z3JpZHB1bHNlLWxvY2FsLWRldi1vbmx5LWtleS0xMjM="
+    GRIDPULSE_DATA_DIR: /data
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./data:/data
+  depends_on:
+    postgres:
+      condition: service_healthy
+
 services:
   postgres:
     image: postgres:16
@@ -6,11 +26,45 @@ services:
       POSTGRES_PASSWORD: gridpulse_local_only
       POSTGRES_DB: gridpulse
     ports: ["5432:5432"]
-    volumes: [pgdata:/var/lib/postgresql/data]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gridpulse"]
       interval: 5s
       retries: 10
+
+  airflow-init:
+    <<: *airflow-common
+    profiles: ["airflow"]
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - >
+        airflow db migrate &&
+        airflow users create --username admin --password admin --firstname a --lastname b
+        --role Admin --email admin@example.com || true
+
+  airflow-webserver:
+    <<: *airflow-common
+    profiles: ["airflow"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      airflow-init: {condition: service_completed_successfully}
+    command: webserver
+    ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      retries: 10
+
+  airflow-scheduler:
+    <<: *airflow-common
+    profiles: ["airflow"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      airflow-init: {condition: service_completed_successfully}
+    command: scheduler
 
   ingest:
     build: .

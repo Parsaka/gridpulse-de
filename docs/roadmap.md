@@ -1,7 +1,7 @@
 # Roadmap (target: 3–4 weeks of focused work)
 
 - [x] **Phase 1 – Ingestion**: SMARD, Bright Sky, ENTSO-E clients → Parquet bronze (idempotent), CLI, tests, CI
-- [ ] **Phase 2 – Orchestration**: Airflow DAGs (daily + backfill), retries, failure alerts
+- [x] **Phase 2 – Orchestration**: Airflow DAGs (daily + backfill), retries, failure alerts
 - [ ] **Phase 3 – Azure**: ADLS Gen2 bronze, Azure Database for PostgreSQL, Key Vault; Terraform (azurerm)
 - [ ] **Phase 4 – dbt**: bronze/silver/gold, star schema, incremental, tests, freshness, docs, `dbt build` in CI
 - [ ] **Phase 5 – CI/CD**: GitHub Actions → Azure via OIDC, terraform plan, manual-approval deploy, rollback doc
