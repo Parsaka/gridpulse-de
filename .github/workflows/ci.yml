@@ -66,7 +66,7 @@ jobs:
           --health-retries 10
     env:
       GRIDPULSE_DATA_DIR: ./data
-      DBT_PROFILES_DIR: dbt
+      DBT_PROFILES_DIR: .  # relative to the dbt/ working directory
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
