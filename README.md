@@ -1,1 +1,30 @@
-# gridpulse-de
+# GridPulse DE
+
+Data and forecasting platform for the German electricity market: open data (SMARD, ENTSO-E, DWD)
+→ Parquet bronze → dbt models → price/load forecasts → API → Power BI. Built on Azure with
+Terraform, Airflow and GitHub Actions.
+
+> Personal portfolio project. Status: **Phase 1 (ingestion) done**; see [roadmap](docs/roadmap.md).
+
+## Quick start
+
+```bash
+python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+gridpulse smard --start 2025-01-01 --end 2025-01-08 --dataset price_day_ahead
+gridpulse weather --start 2025-01-01 --end 2025-01-08
+pytest
+```
+
+Data lands in `data/bronze/<source>/<dataset>/date=YYYY-MM-DD/part.parquet`. Re-running a day
+overwrites that partition (idempotent), so backfills and retries are safe.
+
+## Architecture (target)
+
+```
+SMARD / ENTSO-E / DWD → Python ingestion → ADLS Gen2 (bronze Parquet)
+   → Airflow → PostgreSQL (dbt: bronze/silver/gold) → LightGBM + MLflow → FastAPI (Container Apps)
+   → Power BI · Azure Monitor · Terraform + GitHub Actions (OIDC)
+```
+
+Data sources and licences: [docs/data-sources.md](docs/data-sources.md). Decisions: [docs/adr](docs/adr).
