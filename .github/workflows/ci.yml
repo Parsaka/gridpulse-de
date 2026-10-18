@@ -18,3 +18,20 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: pytest -m "not live" --cov=gridpulse --cov-report=term-missing
+
+  dags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Airflow (pinned with official constraints) and project
+        run: |
+          pip install "apache-airflow==2.10.5" \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt"
+          pip install -e ".[dev]"
+      - run: pytest tests/test_dags.py -v
+        env:
+          AIRFLOW__CORE__LOAD_EXAMPLES: "false"

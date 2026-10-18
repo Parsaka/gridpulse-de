@@ -4,7 +4,7 @@ Data and forecasting platform for the German electricity market: open data (SMAR
 → Parquet bronze → dbt models → price/load forecasts → API → Power BI. Built on Azure with
 Terraform, Airflow and GitHub Actions.
 
-> Personal portfolio project. Status: **Phase 1 (ingestion) done**; see [roadmap](docs/roadmap.md).
+> Personal portfolio project. Status: **Phases 1–2 (ingestion, Airflow) done**; see [roadmap](docs/roadmap.md).
 
 ## Quick start
 
@@ -28,3 +28,13 @@ SMARD / ENTSO-E / DWD → Python ingestion → ADLS Gen2 (bronze Parquet)
 ```
 
 Data sources and licences: [docs/data-sources.md](docs/data-sources.md). Decisions: [docs/adr](docs/adr).
+
+## Run with Airflow (local)
+
+```bash
+docker compose --profile airflow up -d --build   # UI: http://localhost:8080 (admin / admin, local only)
+```
+
+- `gridpulse_daily` (05:00 UTC): SMARD + DWD with a 3-day lookback, retries with exponential backoff,
+  failure callback, and a row-count check so silent empty loads fail loudly.
+- `gridpulse_backfill`: manual run with `start`/`end` params; idempotent, so safe to repeat.
