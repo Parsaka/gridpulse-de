@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     storage_backend: str = "local"  # "local" or "adls"
     adls_account_url: str = ""  # https://<account>.dfs.core.windows.net
     adls_filesystem: str = "bronze"
+    mlflow_tracking_uri: str = "sqlite:///mlflow.db"
     warehouse_url: str = (
         "postgresql+psycopg://gridpulse:gridpulse_local_only@localhost:5432/gridpulse"
     )

@@ -4,6 +4,7 @@ from typing import Annotated
 import pandas as pd
 import structlog
 import typer
+from sqlalchemy import create_engine
 
 from gridpulse import pipeline
 from gridpulse.config import get_settings, make_store
@@ -67,6 +68,35 @@ def sample_data(start: str = "2026-01-01", days: int = 7):
 
     write_sample_bronze(make_store(), start, days)
     log.info("sample.written", start=start, days=days)
+
+
+@app.command("train")
+def train(
+    test_days: int = 90,
+    register: Annotated[str, typer.Option(help="Feature set to register")] = "with_weather",
+    no_mlflow: bool = False,
+):
+    """Train baselines + LightGBM on gold tables, log to MLflow, write backtest to gold."""
+    import json
+
+    from gridpulse.ml import data, registry
+    from gridpulse.ml import train as ml_train
+
+    settings = get_settings()
+    engine = create_engine(settings.warehouse_url)
+    df = data.load_training_frame(engine)
+    results, backtest = ml_train.train_and_evaluate(df, test_days=test_days)
+    data.write_backtest(engine, backtest)
+    info = {
+        "rows": len(df),
+        "first_ts": str(df["ts_utc"].min()),
+        "last_ts": str(df["ts_utc"].max()),
+        "test_days": test_days,
+    }
+    if not no_mlflow:
+        registry.log_run(results, settings.mlflow_tracking_uri, info, register=register)
+    summary = {r.name: {k: round(v, 4) for k, v in r.metrics.items()} for r in results}
+    typer.echo(json.dumps({"data": info, "metrics": summary}, indent=2))
 
 
 @app.command("daily")
