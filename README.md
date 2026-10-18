@@ -54,3 +54,15 @@ Layers: `bronze` (raw, loaded) ? `silver` (typed, deduplicated views, seed `loca
 incremental with a 3-day reprocessing window because SMARD revises recent values.
 CI runs `dbt build` against a Postgres service using deterministic **synthetic** data
 (`gridpulse sample-data`), so no network is needed.
+
+## Price model
+
+```bash
+pip install -e ".[warehouse,ml]"
+gridpulse train --test-days 90      # baselines + LightGBM, logs to MLflow, writes gold.price_forecast_backtest
+```
+
+On the last 90 days, LightGBM with weather inputs reaches MAE 33.1 vs 36.1 EUR/MWh for the
+"same hour yesterday" baseline, **but that uses observed weather as a forecast proxy and is an
+upper bound**; without weather the model is worse than the baseline. Details and limits:
+[docs/model-card.md](docs/model-card.md).

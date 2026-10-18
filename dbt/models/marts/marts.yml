@@ -47,3 +47,12 @@ models:
     columns:
       - name: location_key
         data_tests: [unique, not_null]
+  - name: mart_weather_national_hourly
+    description: National mean weather per UTC hour, used as a model feature.
+    columns:
+      - name: ts_utc
+        data_tests: [unique, not_null]
+      - name: stations
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1, max_value: 9}
