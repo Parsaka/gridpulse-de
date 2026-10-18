@@ -1,0 +1,10 @@
+location,latitude,longitude,region_type
+north_sea_coast,53.55,8.58,coast
+schleswig_holstein,54.32,9.70,north
+lower_saxony,52.37,9.73,north
+brandenburg,52.40,13.07,east
+saxony_anhalt,51.48,11.97,east
+nrw,51.23,6.78,west
+hesse,50.11,8.68,central
+bavaria_south,48.14,11.58,south
+baden_wuerttemberg,48.78,9.18,south

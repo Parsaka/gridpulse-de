@@ -38,3 +38,19 @@ docker compose --profile airflow up -d --build   # UI: http://localhost:8080 (ad
 - `gridpulse_daily` (05:00 UTC): SMARD + DWD with a 3-day lookback, retries with exponential backoff,
   failure callback, and a row-count check so silent empty loads fail loudly.
 - `gridpulse_backfill`: manual run with `start`/`end` params; idempotent, so safe to repeat.
+
+## Warehouse and dbt (local)
+
+```bash
+docker compose up -d postgres
+pip install -e ".[warehouse,dbt]"
+gridpulse load-warehouse                 # bronze Parquet -> Postgres schema `bronze` (upsert)
+cd dbt && export DBT_PROFILES_DIR=. && dbt deps && dbt build
+dbt source freshness && dbt docs generate && dbt docs serve
+```
+
+Layers: `bronze` (raw, loaded) ? `silver` (typed, deduplicated views, seed `locations`) ?
+`gold` (`fct_market_hourly`, `fct_weather_hourly`, `dim_datetime`, `dim_location`). Facts are
+incremental with a 3-day reprocessing window because SMARD revises recent values.
+CI runs `dbt build` against a Postgres service using deterministic **synthetic** data
+(`gridpulse sample-data`), so no network is needed.

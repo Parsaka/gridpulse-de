@@ -1,0 +1,33 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Raw open data loaded by `gridpulse load-warehouse` (SMARD, DWD via Bright Sky).
+    schema: bronze
+    loaded_at_field: ingested_at
+    freshness:
+      warn_after: {count: 36, period: hour}
+      error_after: {count: 72, period: hour}
+    tables:
+      - name: smard_series
+        description: SMARD hourly series (generation by source, load, day-ahead price). Source Bundesnetzagentur, SMARD.de, CC BY 4.0.
+        columns:
+          - name: dataset
+            data_tests: [not_null]
+          - name: ts
+            data_tests: [not_null]
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [dataset, ts]
+      - name: dwd_weather
+        description: Hourly weather per region. Source Deutscher Wetterdienst via Bright Sky.
+        columns:
+          - name: location
+            data_tests: [not_null]
+          - name: ts
+            data_tests: [not_null]
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [location, ts]

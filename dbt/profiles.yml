@@ -1,0 +1,13 @@
+gridpulse:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_PG_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_PG_PORT', '5432') | as_number }}"
+      user: "{{ env_var('DBT_PG_USER', 'gridpulse') }}"
+      password: "{{ env_var('DBT_PG_PASSWORD', 'gridpulse_local_only') }}"
+      dbname: "{{ env_var('DBT_PG_DBNAME', 'gridpulse') }}"
+      schema: public
+      threads: 4
+      sslmode: "{{ env_var('DBT_PG_SSLMODE', 'prefer') }}"
