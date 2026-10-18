@@ -1,5 +1,6 @@
 """DAG integrity tests. Skipped automatically when Airflow is not installed (e.g. on Windows)."""
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ pytest.importorskip("airflow")
 from airflow.models import DagBag  # noqa: E402
 
 DAGS = Path(__file__).resolve().parents[1] / "dags"
+sys.path.insert(0, str(DAGS))  # DAG files import sibling modules (_common), as the scheduler does
 
 
 @pytest.fixture(scope="module")
