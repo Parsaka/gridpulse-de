@@ -1,0 +1,15 @@
+relationship fct_market_hourly_ts_utc_to_dim_datetime_ts_utc
+	fromColumn: fct_market_hourly.ts_utc
+	toColumn: dim_datetime.ts_utc
+
+relationship fct_weather_hourly_ts_utc_to_dim_datetime_ts_utc
+	fromColumn: fct_weather_hourly.ts_utc
+	toColumn: dim_datetime.ts_utc
+
+relationship fct_weather_hourly_location_to_dim_location_location
+	fromColumn: fct_weather_hourly.location
+	toColumn: dim_location.location
+
+relationship price_forecast_backtest_ts_utc_to_dim_datetime_ts_utc
+	fromColumn: price_forecast_backtest.ts_utc
+	toColumn: dim_datetime.ts_utc

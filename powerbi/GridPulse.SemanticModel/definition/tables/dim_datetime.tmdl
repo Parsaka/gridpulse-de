@@ -1,0 +1,57 @@
+table dim_datetime
+	column ts_utc
+		dataType: dateTime
+		formatString: yyyy-MM-dd HH:mm
+		summarizeBy: none
+		sourceColumn: ts_utc
+
+	column ts_local
+		dataType: dateTime
+		formatString: yyyy-MM-dd HH:mm
+		summarizeBy: none
+		sourceColumn: ts_local
+
+	column date_local
+		dataType: dateTime
+		formatString: yyyy-MM-dd
+		summarizeBy: none
+		sourceColumn: date_local
+
+	column hour_local
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: hour_local
+
+	column iso_weekday
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: iso_weekday
+
+	column is_weekend
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: is_weekend
+
+	column month_local
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: month_local
+
+	column year_local
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: year_local
+
+	partition dim_datetime = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database(PgServer, PgDatabase),
+					Data = Source{[Schema="gold", Item="dim_datetime"]}[Data],
+					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}, {"ts_local", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}, {"date_local", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+				in
+					Utc
