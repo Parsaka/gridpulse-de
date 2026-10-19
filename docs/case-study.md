@@ -15,7 +15,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 | Storage | Parquet bronze, local or ADLS Gen2 behind one interface | Same code path on a laptop and in Azure |
 | Orchestration | Airflow: daily chain and weekly retrain DAGs | Retries with backoff, row-count guards, failure callback |
 | Warehouse | PostgreSQL + dbt (bronze, silver, gold star schema) | Incremental facts with a reprocessing window for late data revisions |
-| Quality | 29 dbt tests, source freshness, 36 pytest tests, leakage test for features | Failures are caught where they happen |
+| Quality | 29 dbt tests, source freshness, 37 local pytest tests (plus DAG and Postgres tests in CI), leakage test for features | Failures are caught where they happen |
 | ML | LightGBM against naive baselines, MLflow, shadow-mode forecast log, PSI drift | Evaluated on a chronological split, then on real forecasts going forward |
 | Serving | FastAPI, API-key auth, rate limit, Prometheus metrics, Grafana, alert rules | Fails closed, observable |
 | IaC and CI | Terraform (azurerm) validated in CI, GitHub Actions, OIDC workflow for Azure | Reproducible infrastructure; no stored cloud secrets |
