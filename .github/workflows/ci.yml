@@ -83,6 +83,12 @@ jobs:
         run: |
           dbt deps
           dbt build
+      - name: Shadow-forecast log tests (need gold tables in Postgres)
+        run: |
+          pip install -e ".[dev,api,ml]"
+          pytest tests/test_shadow_pg.py -v
+        env:
+          GRIDPULSE_TEST_WAREHOUSE_URL: postgresql+psycopg://gridpulse:gridpulse_local_only@localhost:5432/gridpulse
 
   docker-api:
     runs-on: ubuntu-latest

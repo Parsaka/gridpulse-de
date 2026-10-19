@@ -1,4 +1,4 @@
-"""Daily incremental ingestion: SMARD + DWD weather -> bronze Parquet.
+"""Daily pipeline: SMARD + DWD weather -> bronze -> Postgres -> dbt -> freshness + shadow forecast.
 
 Each run re-loads a 3-day lookback window because SMARD revises recent values; writes are
 idempotent partition overwrites, so reruns are safe.
@@ -8,12 +8,14 @@ from datetime import datetime
 
 from _common import (
     DEFAULT_ARGS,
+    GP,
     SMARD_DATASETS,
     WEATHER_LOCATIONS,
     check_rows,
     load_smard,
     load_weather,
     notify_failure,
+    venv_task,
 )
 from airflow.decorators import dag
 
@@ -36,7 +38,17 @@ END = "{{ data_interval_end.isoformat() }}"
 def gridpulse_daily():
     smard_rows = load_smard.partial(start=START, end=END).expand(dataset=SMARD_DATASETS)
     weather_rows = load_weather.partial(start=START, end=END).expand(location=WEATHER_LOCATIONS)
-    check_rows(smard_rows, weather_rows)
+    checked = check_rows(smard_rows, weather_rows)
+
+    # bronze Parquet -> Postgres -> dbt (silver/gold, tests) -> freshness -> shadow forecast
+    load_wh = venv_task(
+        "load_warehouse", f"{GP}/gridpulse load-warehouse --since-days {LOOKBACK_DAYS + 4}"
+    )
+    dbt_dir = "cd /opt/airflow/dbt"
+    dbt_build = venv_task("dbt_build", f"{dbt_dir} && {GP}/dbt deps && {GP}/dbt build")
+    freshness = venv_task("dbt_source_freshness", f"{dbt_dir} && {GP}/dbt source freshness")
+    forecast = venv_task("forecast_log", f"{GP}/gridpulse forecast-log", retries=1)
+    checked >> load_wh >> dbt_build >> [freshness, forecast]
 
 
 gridpulse_daily()

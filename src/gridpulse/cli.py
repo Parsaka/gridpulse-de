@@ -49,16 +49,62 @@ def ingest_entsoe_prices(start: Start, end: End):
 
 
 @app.command("load-warehouse")
-def load_warehouse():
+def load_warehouse(
+    since_days: Annotated[
+        int | None, typer.Option(help="Only partitions from the last N days (default: all)")
+    ] = None,
+):
     """Upsert bronze Parquet into PostgreSQL (schema bronze) for dbt."""
-    from gridpulse import warehouse
+    pipeline.load_warehouse(since_days)
+
+
+@app.command("forecast-log")
+def forecast_log():
+    """Issue the next-day forecast (live weather forecast) and store it for shadow evaluation."""
+    from sqlalchemy import create_engine
+
+    from gridpulse.api.service import ForecastService
+    from gridpulse.ml import shadow
 
     settings = get_settings()
-    engine = warehouse.get_engine(settings.warehouse_url)
-    warehouse.init_schema(engine)
-    store = make_store(settings)
-    warehouse.load_smard(engine, store)
-    warehouse.load_weather(engine, store)
+    engine = create_engine(settings.warehouse_url)
+    forecast = ForecastService(engine, settings.model_dir).forecast_next_day()
+    n = shadow.log_forecast(engine, forecast)
+    log.info("forecast.logged", rows=n, target_day=forecast["target_day_utc"])
+
+
+@app.command("shadow-eval")
+def shadow_eval():
+    """Score logged forecasts against actual prices (honest, forward-looking evaluation)."""
+    import json
+
+    from sqlalchemy import create_engine
+
+    from gridpulse.ml import shadow
+
+    typer.echo(json.dumps(shadow.evaluate(create_engine(get_settings().warehouse_url)), indent=2))
+
+
+@app.command("drift")
+def drift(recent_days: int = 14):
+    """PSI drift of the model's features: last N days vs the same season a year earlier.
+
+    Exit code 99 means drift was detected (Airflow shows that as a skipped task, i.e. a warning).
+    """
+    import json
+
+    from sqlalchemy import create_engine
+
+    from gridpulse.ml import artifacts, monitor
+
+    settings = get_settings()
+    _, meta = artifacts.load_model(settings.model_dir)
+    report = monitor.check_drift(
+        create_engine(settings.warehouse_url), meta["features"], recent_days=recent_days
+    )
+    typer.echo(json.dumps(report, indent=2, default=str))
+    if report["drifted"]:
+        raise typer.Exit(code=99)
 
 
 @app.command("sample-data")

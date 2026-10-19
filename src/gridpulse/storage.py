@@ -11,6 +11,11 @@ from pathlib import Path
 import pandas as pd
 
 
+def _partition_date(dirname: str) -> date:
+    """'date=2026-01-31' -> date(2026, 1, 31)."""
+    return date.fromisoformat(dirname.removeprefix("date="))
+
+
 class BronzeStore:
     def __init__(self, root: Path):
         self.root = Path(root)
@@ -35,9 +40,12 @@ class BronzeStore:
             written += len(part)
         return written
 
-    def read(self, source: str, dataset: str) -> pd.DataFrame:
+    def read(self, source: str, dataset: str, since: date | None = None) -> pd.DataFrame:
+        """Read all partitions, or only those with date >= since."""
         base = self.root / source / dataset
         files = sorted(base.glob("date=*/part.parquet"))
+        if since is not None:
+            files = [f for f in files if _partition_date(f.parent.name) >= since]
         if not files:
             return pd.DataFrame()
         return pd.concat((pd.read_parquet(f) for f in files), ignore_index=True)
@@ -80,10 +88,12 @@ class AdlsBronzeStore:
             written += len(part)
         return written
 
-    def read(self, source: str, dataset: str) -> pd.DataFrame:
+    def read(self, source: str, dataset: str, since: date | None = None) -> pd.DataFrame:
         frames = []
         for item in self.fs.get_paths(path=f"{source}/{dataset}"):
             if item.name.endswith("part.parquet"):
+                if since is not None and _partition_date(item.name.split("/")[-2]) < since:
+                    continue
                 data = self.fs.get_file_client(item.name).download_file().readall()
                 frames.append(pd.read_parquet(io.BytesIO(data)))
         return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()

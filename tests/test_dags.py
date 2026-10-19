@@ -35,3 +35,21 @@ def test_daily_is_scheduled_without_catchup(dagbag):
     dag = dagbag.get_dag("gridpulse_daily")
     assert dag.catchup is False
     assert dag.max_active_runs == 1
+
+
+def test_daily_runs_the_full_chain_in_order(dagbag):
+    dag = dagbag.get_dag("gridpulse_daily")
+    assert {"load_warehouse", "dbt_build", "dbt_source_freshness", "forecast_log"} <= set(
+        dag.task_ids
+    )
+    chain = ["check_rows", "load_warehouse", "dbt_build"]
+    for up, down in zip(chain, chain[1:], strict=False):
+        assert down in dag.get_task(up).downstream_task_ids
+    assert dag.get_task("dbt_build").downstream_task_ids == {"dbt_source_freshness", "forecast_log"}
+
+
+def test_retrain_dag_order_and_drift_does_not_retry(dagbag):
+    dag = dagbag.get_dag("gridpulse_retrain_weekly")
+    assert dag.get_task("train").downstream_task_ids == {"shadow_eval"}
+    assert dag.get_task("shadow_eval").downstream_task_ids == {"drift_check"}
+    assert dag.get_task("drift_check").retries == 0

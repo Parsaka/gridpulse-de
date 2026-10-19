@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import structlog
 
-from gridpulse.config import make_store
+from gridpulse.config import get_settings, make_store
 from gridpulse.ingestion import brightsky, smard
 
 log = structlog.get_logger()
@@ -43,3 +43,22 @@ def daily_window(days_back: int = 3, now: datetime | None = None) -> tuple[datet
     now = as_utc(now or datetime.now(UTC))
     end = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     return end - timedelta(days=days_back + 1), end
+
+
+def load_warehouse(since_days: int | None = None) -> dict:
+    """Upsert bronze Parquet into PostgreSQL (idempotent). Needs the `warehouse` extra.
+
+    since_days limits the read to the most recent partitions (daily runs); None loads everything
+    (first load or backfill).
+    """
+    from gridpulse import warehouse
+
+    settings = get_settings()
+    engine = warehouse.get_engine(settings.warehouse_url)
+    warehouse.init_schema(engine)
+    store = make_store(settings)
+    since = None if since_days is None else (datetime.now(UTC) - timedelta(days=since_days)).date()
+    return {
+        "smard_rows": warehouse.load_smard(engine, store, since),
+        "weather_rows": warehouse.load_weather(engine, store, since),
+    }

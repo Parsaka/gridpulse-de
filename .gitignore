@@ -32,3 +32,5 @@ mlartifacts/
 
 # model artifacts are build outputs
 artifacts/
+
+mlflow/

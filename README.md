@@ -19,13 +19,35 @@ pytest
 Data lands in `data/bronze/<source>/<dataset>/date=YYYY-MM-DD/part.parquet`. Re-running a day
 overwrites that partition (idempotent), so backfills and retries are safe.
 
-## Architecture (target)
+## Architecture
 
+```mermaid
+flowchart LR
+  subgraph Sources
+    S1[SMARD]:::src
+    S2[DWD via Bright Sky]:::src
+    S3[ENTSO-E]:::src
+  end
+  S1 & S2 & S3 --> ING[Python ingestion<br/>idempotent]
+  ING --> BR[(Bronze Parquet<br/>local or ADLS Gen2)]
+  BR --> LOAD[load-warehouse<br/>upsert]
+  LOAD --> PG[(PostgreSQL)]
+  PG --> DBT[dbt<br/>silver / gold<br/>29 tests]
+  DBT --> GOLD[(gold star schema)]
+  GOLD --> ML[LightGBM + MLflow<br/>baselines, shadow log]
+  ML --> API[FastAPI<br/>auth, rate limit]
+  GOLD --> PBI[Power BI<br/>TMDL model]
+  API --> PROM[Prometheus + Grafana]
+  AF[Airflow<br/>daily + weekly DAGs] -.orchestrates.-> ING
+  AF -.-> LOAD
+  AF -.-> DBT
+  AF -.-> ML
+  TF[Terraform + GitHub Actions<br/>OIDC to Azure] -.provisions.-> BR
+  classDef src fill:#eef,stroke:#88a
 ```
-SMARD / ENTSO-E / DWD → Python ingestion → ADLS Gen2 (bronze Parquet)
-   → Airflow → PostgreSQL (dbt: bronze/silver/gold) → LightGBM + MLflow → FastAPI (Container Apps)
-   → Power BI · Azure Monitor · Terraform + GitHub Actions (OIDC)
-```
+
+Implemented and run locally: everything except the Azure deployment (Terraform is validated in CI,
+never applied; see [docs/deploy.md](docs/deploy.md)).
 
 Data sources and licences: [docs/data-sources.md](docs/data-sources.md). Decisions: [docs/adr](docs/adr).
 
