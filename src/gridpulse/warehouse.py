@@ -75,10 +75,10 @@ def _prepare(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates(subset=[c for c in df.columns if c in ("dataset", "location", "ts")])
 
 
-def load_smard(engine: Engine, store) -> int:
+def load_smard(engine: Engine, store, since=None) -> int:
     total = 0
     for name in smard.DATASETS:
-        df = store.read("smard", name)
+        df = store.read("smard", name, since)
         if not df.empty:
             total += _upsert(
                 engine, _prepare(df), "bronze.smard_series", ["dataset", "ts"], SMARD_COLS
@@ -87,10 +87,10 @@ def load_smard(engine: Engine, store) -> int:
     return total
 
 
-def load_weather(engine: Engine, store) -> int:
+def load_weather(engine: Engine, store, since=None) -> int:
     total = 0
     for loc in brightsky.LOCATIONS:
-        df = store.read("dwd", f"weather_{loc}")
+        df = store.read("dwd", f"weather_{loc}", since)
         if not df.empty:
             total += _upsert(
                 engine, _prepare(df), "bronze.dwd_weather", ["location", "ts"], WEATHER_COLS

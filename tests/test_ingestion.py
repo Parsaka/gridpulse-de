@@ -59,3 +59,12 @@ def test_weather_fetch_parses_payload():
     assert len(df) == 2
     assert list(df.columns[:2]) == ["timestamp", "temperature"]
     assert (df["location"] == "nrw").all()
+
+
+def test_bronze_read_since_filters_partitions(tmp_path):
+    store = BronzeStore(tmp_path)
+    ts = pd.date_range("2025-01-01", periods=72, freq="h", tz="UTC")
+    store.write(pd.DataFrame({"timestamp": ts, "value": range(72)}), "smard", "x")
+    assert len(store.read("smard", "x")) == 72
+    assert len(store.read("smard", "x", since=date(2025, 1, 2))) == 48
+    assert store.read("smard", "x", since=date(2025, 2, 1)).empty

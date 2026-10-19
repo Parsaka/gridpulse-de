@@ -11,9 +11,17 @@ x-airflow-common: &airflow-common
     # local-development-only key; real deployments read secrets from Key Vault
     AIRFLOW__CORE__FERNET_KEY: "Z3JpZHB1bHNlLWxvY2FsLWRldi1vbmx5LWtleS0xMjM="
     GRIDPULSE_DATA_DIR: /data
+    GRIDPULSE_WAREHOUSE_URL: postgresql+psycopg://gridpulse:gridpulse_local_only@postgres:5432/gridpulse
+    GRIDPULSE_MODEL_DIR: /models
+    GRIDPULSE_MLFLOW_TRACKING_URI: sqlite:////mlflow/mlflow.db
+    DBT_PROFILES_DIR: /opt/airflow/dbt
+    DBT_PG_HOST: postgres
   volumes:
     - ./dags:/opt/airflow/dags
+    - ./dbt:/opt/airflow/dbt
     - ./data:/data
+    - ./artifacts:/models
+    - ./mlflow:/mlflow
   depends_on:
     postgres:
       condition: service_healthy

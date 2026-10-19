@@ -49,3 +49,19 @@ These are laptop numbers for a pandas-backed endpoint and say nothing about prod
 - `/v1/prices` returned HTTP 500 whenever the newest hour had no load value yet (NaN is not valid
   JSON). Fixed (NaN becomes null) with a regression test.
 - Concurrent first requests to `/v1/forecast` each triggered a weather fetch; now single-flight.
+
+
+## Orchestration and shadow evaluation (verified locally in Docker)
+- `gridpulse_daily` ran end to end in Airflow: ingestion, `load-warehouse --since-days 7`, `dbt build`
+  (38 nodes pass), `dbt source freshness`, `forecast-log`. Bugs found by running it: a full-history
+  warehouse load that took 25+ minutes through the Docker bind mount (now incremental), and a
+  missing `libgomp1` for LightGBM in the Airflow image.
+- `forecast-log` stores each next-day forecast in `ops.forecast_log`; `shadow-eval` scores it against
+  actuals once SMARD publishes them. The model never uses the target day's prices, but those prices
+  may already be public on the exchange when the forecast is issued, so treat shadow results as a
+  forecast-quality check, not a trading simulation. No scored hours exist yet; the first appear
+  after the next ingestion.
+- `gridpulse_retrain_weekly`: train, shadow-eval, drift. `gridpulse drift` compares the last 14 days
+  with the same season one year earlier (calendar and weather features excluded). On 2026-10-18 it
+  flagged all price-level features (PSI 1.9 to 8.3), which is real: prices are far above last
+  October. It exits 99 and Airflow shows the task as skipped (a warning), not failed.

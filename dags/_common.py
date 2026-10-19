@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta
 
 from airflow.decorators import task
+from airflow.operators.bash import BashOperator
 
 from gridpulse import pipeline
 from gridpulse.ingestion import brightsky, smard
@@ -59,3 +60,11 @@ def check_rows(smard_rows: list[int], weather_rows: list[int]) -> dict:
 
 SMARD_DATASETS = list(smard.DATASETS)
 WEATHER_LOCATIONS = list(brightsky.LOCATIONS)
+
+
+GP = "/home/airflow/gp-venv/bin"
+
+
+def venv_task(task_id: str, command: str, **kwargs) -> BashOperator:
+    """Run a command from the heavy virtualenv (see docker/airflow/Dockerfile)."""
+    return BashOperator(task_id=task_id, bash_command=f"set -euo pipefail; {command}", **kwargs)
