@@ -6,6 +6,12 @@ Terraform, Airflow and GitHub Actions.
 
 > Personal portfolio project. Status: **Phases 1–2 (ingestion, Airflow) done**; see [roadmap](docs/roadmap.md).
 
+## Screenshots (from the running system)
+
+| Airflow: daily DAG, all tasks green | Grafana: API health dashboard |
+|---|---|
+| ![Airflow daily DAG](docs/images/airflow-daily-dag.jpg) | ![Grafana API health](docs/images/grafana-api-health.jpg) |
+
 ## Quick start
 
 ```bash
