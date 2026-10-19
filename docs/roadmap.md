@@ -7,5 +7,5 @@
 - [ ] **Phase 5 – CI/CD**: GitHub Actions → Azure via OIDC, terraform plan, manual-approval deploy, rollback doc
 - [~] **Phase 6 – ML**: baselines + LightGBM price model, leakage tests, MLflow registry, backtest table for BI, model card (done). Open: real forecast inputs (MOSMIX shadow mode), weekly retrain DAG, Evidently drift
 - [~] **Phase 7 – Serving & monitoring**: FastAPI (API key, rate limit, MOSMIX-based forecast), Prometheus metrics + alert rules, Grafana, PSI drift function, load test, incident drill (done locally). Open: Container Apps deploy, Azure Monitor alert delivery, drift job in Airflow
-- [ ] **Phase 8 – Power BI**: PBIP/TMDL model + DAX + report pages, BPA check in CI
+- [~] **Phase 8 – Power BI**: PBIP/TMDL semantic model (5 tables, 20 measures), tests in CI, report skeleton, docs (done). Open: build the visuals in Desktop and capture screenshots
 - [ ] **Phase 9 – Portfolio**: architecture diagram, case study on website, CV/LinkedIn update

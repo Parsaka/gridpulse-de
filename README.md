@@ -100,3 +100,8 @@ curl -H "X-API-Key: dev-local-key" http://localhost:8000/v1/forecast
 forecast), `/metrics` for Prometheus. Alert rules, Grafana dashboard, the measured load test and a
 documented failure drill are in [docs/runbook.md](docs/runbook.md). The forecast is a portfolio
 demo, not trading advice; see the [model card](docs/model-card.md) for its limits.
+
+## Power BI
+
+Semantic model (TMDL, 20 DAX measures, star schema over the gold tables) and a report skeleton in
+[powerbi/](powerbi/), with setup, page designs and limits in [docs/powerbi.md](docs/powerbi.md).

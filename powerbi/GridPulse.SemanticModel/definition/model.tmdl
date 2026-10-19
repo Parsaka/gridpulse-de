@@ -1,0 +1,12 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+
+ref table fct_market_hourly
+ref table dim_datetime
+ref table dim_location
+ref table fct_weather_hourly
+ref table price_forecast_backtest
+
+ref expression PgServer
+ref expression PgDatabase
