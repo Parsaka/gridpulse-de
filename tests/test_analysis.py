@@ -279,6 +279,7 @@ def test_consumer_shift_saves_money_and_never_costs_more_than_flat():
 
 
 def test_error_by_factor_bins_cover_every_hour_once():
+    pytest.importorskip("holidays")
     from gridpulse.analysis.factors import error_by_factor, feature_frame
 
     df = _market_with_weather(days=45)
