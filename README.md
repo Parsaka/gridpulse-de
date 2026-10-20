@@ -171,7 +171,7 @@ it wins or fails?* Plain-language one-pager for non-technical readers: [docs/for
 | Nominal 80% forecast interval, actual coverage | 69% as trained, 79% after rolling conformal calibration |
 | Gas explains the +70 EUR/MWh price gap | gas 11.1 to 23.3 USD/mmbtu; 5.6 EUR/MWh per USD/mmbtu (3.3 to 6.8, R2 0.76) implies +68 |
 | Price effect of 1 GW more wind / solar | -3.0 / -3.3 EUR/MWh (wind and solar explain 31 of the 67 points of price variation explained) |
-| Model gain in winter vs spring | 6% (interval includes zero) vs 33% |
+| Model gain in winter vs spring | 4% (interval includes zero) vs 32% |
 | Solar owner: price received vs average | 54% overall, 26% in April 2026 |
 | Flexible load in the cheapest 4 hours | 56% lower energy cost than running flat |
 

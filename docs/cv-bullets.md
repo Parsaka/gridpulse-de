@@ -21,7 +21,7 @@ Label it as a personal project. Do not imply professional Data Engineering exper
 - Quantified the drivers: each GW of wind or solar lowers the day-ahead price by about 3 EUR/MWh,
   solar sells at 54% of the average price (26% in spring), flexible load can cut energy cost by
   56% by running in the cheapest four hours, and the forecast helps most when the weather changes
-  from yesterday (gain 34%) and least in winter (6%, not significant).
+  from yesterday (gain 35%) and least in winter (4%, not significant).
 - Scheduled the pipeline in the cloud: daily ingest, dbt tests, next-day forecast and shadow-log
   scoring, plus a weekly retrain gated on beating the naive baseline, as GitHub Actions workflows
   with OIDC to Azure (no stored secrets), a data lake with a persistent state container, and
