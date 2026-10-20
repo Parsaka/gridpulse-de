@@ -4,7 +4,6 @@ from typing import Annotated
 import pandas as pd
 import structlog
 import typer
-from sqlalchemy import create_engine
 
 from gridpulse import pipeline
 from gridpulse.config import get_settings, make_store
@@ -124,6 +123,8 @@ def train(
 ):
     """Train baselines + LightGBM on gold tables, log to MLflow, write backtest to gold."""
     import json
+
+    from sqlalchemy import create_engine
 
     from gridpulse.ml import data, registry
     from gridpulse.ml import train as ml_train

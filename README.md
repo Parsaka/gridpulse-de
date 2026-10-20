@@ -111,3 +111,13 @@ demo, not trading advice; see the [model card](docs/model-card.md) for its limit
 
 Semantic model (TMDL, 20 DAX measures, star schema over the gold tables) and a report skeleton in
 [powerbi/](powerbi/), with setup, page designs and limits in [docs/powerbi.md](docs/powerbi.md).
+
+## Licence and data attribution
+
+Code and documentation: MIT, see [LICENSE](LICENSE). Data keeps its publishers' licences.
+
+> Contains data from Bundesnetzagentur | SMARD.de (CC BY 4.0) and Deutscher Wetterdienst
+> (CC BY 4.0, via Bright Sky). Quelle: Deutscher Wetterdienst. Data was aggregated and combined by
+> GridPulse DE; changes are not endorsed by the publishers.
+
+Verification status of each source's terms: [docs/data-sources.md](docs/data-sources.md).
