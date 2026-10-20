@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 import numpy as np
 import pandas as pd
 
-from gridpulse.analysis import extras, stats
+from gridpulse.analysis import extras, factors, stats
 from gridpulse.analysis.arbitrage import DEFAULT_BATTERY, backtest, summarise
 from gridpulse.ml.uncertainty import day_block_bootstrap
 
@@ -113,6 +113,17 @@ def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
         "throughput_cost_eur_per_mwh": DEFAULT_BATTERY.throughput_cost,
     }
 
+    ff = factors.feature_frame(wf, df)
+    factor_results = {
+        "error_by_factor": factors.error_by_factor(ff, n_boot=min(n_boot, 400)),
+        "weather_effects": factors.weather_effects(df, n_boot=min(n_boot, 300)),
+        "scenarios": factors.scenarios(ff, df),
+        "capture_rates": factors.capture_rates(df),
+        "consumer_shift": factors.consumer_shift(df),
+        "battery_by_factor": factors.battery_by_factor(daily, ff),
+        "anomalies": factors.anomalies(ff, df),
+    }
+
     res = {
         "meta": {
             "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -149,5 +160,6 @@ def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
             "noise": noise_sensitivity(wf, n_boot=n_boot) if "lgbm_weather_noise25" in wf else [],
         },
         "battery": battery,
+        "factors": factor_results,
     }
     return _round(res)

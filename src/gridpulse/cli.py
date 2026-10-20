@@ -141,6 +141,7 @@ def analyze(
     shutil.copy(dash, docs / "analysis" / "dashboard.html")
     shutil.copy(out / "results.json", docs / "analysis" / "results.json")
     report.write_report(res, docs / "analysis.md")
+    report.write_business(res, docs / "for-business.md")
     for name, table in report.bi_tables(res).items():  # feeds the Power BI report
         table.to_sql(name, engine, schema="gold", if_exists="replace", index=False)
     log.info("analyze.done", figures=len(list((out / "figures").glob("*.png"))))

@@ -45,6 +45,26 @@ def render(res: dict) -> str:
     big = max(sizes, key=lambda r: r["duration_h"])
     conc = bat["concentration"]
     surplus = price["curve"][0]
+    fa = res["factors"]
+    ebf, we, an = fa["error_by_factor"], fa["weather_effects"], fa["anomalies"]
+    scn = {x["scenario"]: x for x in fa["scenarios"]}
+    cr, cs, bf = fa["capture_rates"], fa["consumer_shift"], fa["battery_by_factor"]
+    eff = we["effects"]["all"]
+    unclear = [
+        f"{f['label']} {b['bin']}" for f in ebf.values() for b in f["bins"] if b["gain_ci"][0] <= 0
+    ]
+    best_bin = max(
+        ((f["label"], b) for f in ebf.values() for b in f["bins"]), key=lambda t: t[1]["gain"]
+    )
+    spring = next(b for b in ebf["season"]["bins"] if b["bin"] == "spring")
+    winter = next(b for b in ebf["season"]["bins"] if b["bin"] == "winter")
+    dw = ebf["d_wind"]["bins"]
+    worst_h = an["worst_forecast_hours"]
+    sm = [r for r in cr["months"]]
+    sol_min = min(sm, key=lambda r: r["solar_capture"])
+    bm = bf["by_month"]
+    best_m = max(bm, key=lambda r: r["perfect_eur_day"])
+    worst_m = min(bm, key=lambda r: r["perfect_eur_day"])
     n_months = len(fc["monthly"])
     n_better = sum(1 for r in fc["monthly"] if r["diff"] < 0)
     n_sig = sum(1 for r in fc["monthly"] if r["diff_ci"][1] < 0)
@@ -253,6 +273,119 @@ point on this curve.
 By kind of day (exploratory, six overlapping groups, no correction for multiple comparisons) there
 is no group where the model's advantage over yesterday is clear at 2 MWh.
 
+## 5. What drives prices, and when the forecast wins or loses
+
+### 5.1 The weather effect on the price
+
+![Weather effects]({FIG}/15_weather_effects.png)
+
+Holding hour of day, month and weekend fixed, **one more GW of wind lowers the day-ahead price by
+{abs(eff["wind_gw"]["effect"]):.1f} EUR/MWh** (interval {eff["wind_gw"]["ci"][0]:.1f} to {eff["wind_gw"]["ci"][1]:.1f}), one more GW of solar by
+{abs(eff["solar_gw"]["effect"]):.1f} ({eff["solar_gw"]["ci"][0]:.1f} to {eff["solar_gw"]["ci"][1]:.1f}), and one more GW of demand raises it by
+{eff["load_gw"]["effect"]:.1f} ({eff["load_gw"]["ci"][0]:.1f} to {eff["load_gw"]["ci"][1]:.1f}). The wind and solar effects are almost identical in the two
+12-month periods; the demand effect weakened in the second. Temperature adds little once
+demand is known ({eff["temperature_c"]["effect"]:+.1f} EUR/MWh per degree, and about zero in the first year):
+it matters through heating and cooling demand, not directly.
+
+Wind and solar generation are the biggest single driver: hour, month and weekend explain
+{_pct(we["r2"]["hour of day, month, weekend"])} of the variation in price, adding demand brings it to
+{_pct(we["r2"]["+ electricity demand"])}, adding wind and solar to {_pct(we["r2"]["+ wind and solar generation"])}, and temperature
+to {_pct(we["r2"]["+ temperature"])}. This is a descriptive regression, not a causal estimate.
+
+### 5.2 Weather situations
+
+![Weather scenarios]({FIG}/16_weather_scenarios.png)
+
+| Situation | Hours | Mean price | Negative | Above 200 | Model vs yesterday |
+|---|---|---|---|---|---|
+{chr(10).join(f"| {x['scenario']} | {x['hours']} | {x['mean_price']:.0f} | {_pct(x['share_negative'])} | {_pct(x['share_above_200'])} | {_pct(x['gain'])} |" for x in fa["scenarios"])}
+
+A sunny weekend midday is the cheapest situation in the data (mean {scn["Sunny weekend midday"]["mean_price"]:.0f} EUR/MWh,
+{_pct(scn["Sunny weekend midday"]["share_negative"])} of hours negative); a calm winter evening is the most expensive
+(mean {scn["Calm winter evening"]["mean_price"]:.0f}, {_pct(scn["Calm winter evening"]["share_above_200"])} of hours above 200). Hot days
+are volatile ({_pct(scn["Hot day (above 28 C)"]["share_above_200"])} of hours above 200 and {_pct(scn["Hot day (above 28 C)"]["share_negative"])} negative, only {scn["Hot day (above 28 C)"]["hours"]} hours); cold days are stable and predictable.
+
+### 5.3 When the model works better and worse
+
+![Forecast quality by factor]({FIG}/14_forecast_by_factor.png)
+
+* **Best:** {best_bin[0]} {best_bin[1]["bin"]} ({_pct(best_bin[1]["gain"])} lower error than yesterday); spring
+  ({_pct(spring["gain"])}); hours with strong or sunny weather; and hours where the weather
+  *changes* from yesterday: with the largest wind change in either direction the gain is
+  {_pct(dw[0]["gain"])} and {_pct(dw[-1]["gain"])}. The model's job is to notice what yesterday does not know.
+* **Worst:** winter (gain {_pct(winter["gain"])}, interval {_pct(winter["gain_ci"][0])} to {_pct(winter["gain_ci"][1])}, which includes
+  zero) and days when the weather is the same as yesterday (middle wind-change bin: gain
+  {_pct(dw[2]["gain"])}). When nothing changes, "same as yesterday" is hard to beat. In windy winter
+  evenings the model is slightly *worse* than yesterday ({_pct(scn["Windy winter evening"]["gain"])}, {scn["Windy winter evening"]["hours"]} hours).
+* **Largest absolute errors** are in the morning and evening ramps, in hours with high solar
+  output, in surplus hours (residual load below 13 GW: MAE {ebf["residual_gw"]["bins"][0]["mae_model"]:.0f} against
+  {ebf["residual_gw"]["bins"][2]["mae_model"]:.0f} in the middle of the range) and the day after an unusual day.
+* **Not clearly better than yesterday (interval includes zero):** {"; ".join(unclear[:8]) if unclear else "none"}.
+* **Weekends and public holidays** are no worse than normal days for the model
+  (weekend {_pct(ebf["weekend"]["bins"][1]["gain"])}, holiday {_pct(ebf["holiday"]["bins"][1]["gain"])} with only {ebf["holiday"]["bins"][1]["hours"]} hours).
+
+### 5.4 How it fails
+
+![Actual against forecast]({FIG}/20_actual_vs_forecast.png)
+
+Only {_pct(an["share_error_above_100"], 1)} of hours have an error above 100 EUR/MWh, but the worst 1% of hours
+cause {_pct(an["share_of_total_error_from_worst_1pct"], 1)} of all error. They fall into two kinds:
+
+1. **Spikes are under-forecast.** On 14 September 2026 at 19:00 local time the price hit
+   {worst_h[2]["actual"]:.0f} EUR/MWh with {worst_h[2]["wind_gw"]:.1f} GW of wind and {worst_h[2]["residual_gw"]:.0f} GW of residual load; the model said
+   {worst_h[2]["forecast"]:.0f}, yesterday's price said {worst_h[2]["naive"]:.0f}.
+2. **Extremes are copied into the next day.** The lowest price in the data ({an["min_price"]:.0f} EUR/MWh, 1 May 2026, a holiday with a
+   solar surplus) was forecast as {worst_h[0]["forecast"]:.0f}. The following day the model and the naive
+   forecast both predicted around {worst_h[3]["forecast"]:.0f} to {worst_h[4]["forecast"]:.0f} again, while the real price was only {worst_h[3]["actual"]:.0f} to {worst_h[4]["actual"]:.0f}. A
+   model that anchors on yesterday inherits yesterday's outliers.
+
+### 5.5 Odd-looking results, checked
+
+| Observation | Check | Verdict |
+|---|---|---|
+| Negative price while demand is high? | {an["negative_with_high_residual_load"]["hours"]} hours with a negative price and residual load above 25 GW | Consistent: negative prices only occur in surplus hours |
+| Price spike while supply is ample? | {an["spike_with_low_residual_load"]["hours"]} hours above 250 EUR/MWh with residual load below 20 GW | Consistent |
+| Price of {an["min_price"]:.0f} EUR/MWh | 1 May 2026 (public holiday) at midday, residual load {worst_h[0]["residual_gw"]:.1f} GW, close to the -500 EUR/MWh minimum of the coupled day-ahead market (a market rule, not derived from this data) | Real, extreme, explained by holiday plus solar surplus |
+| Many prices exactly around zero | {an["hours_near_zero"]} hours ({_pct(an["share_near_zero"], 1)}) within 0.1 EUR/MWh of zero | Plausible market behaviour (renewables often bid near zero); not verified here |
+| Prices higher although residual load fell | 2026 vs 2025 at equal conditions (+{pa["premium_eur_mwh"]:.0f} EUR/MWh) | Likely fuel and carbon prices, not in the data |
+| Temperature effect differs between years | {we["effects"]["year 1"]["temperature_c"]["effect"]:+.1f} vs {we["effects"]["year 2"]["temperature_c"]["effect"]:+.1f} EUR/MWh per degree | Weak and unstable: do not rely on it |
+| Noisy-weather model worse than no-weather model | 100% noise gain {_pct(noise[100]["gain"], 1)} vs {_pct(cal["skill_vs_baseline"], 1)} | Expected: the model learned to trust weather |
+| Missing data | {an["missing_residual_load_hours"]} hours without residual load, {an["missing_weather_hours"]} without weather | Left as missing, never filled; excluded where needed |
+| Jumps | {an["hourly_jumps_above_300"]} hour-to-hour changes above 300 EUR/MWh | Rare; kept in the data, they coincide with the extreme hours |
+
+None of the checks found data that contradicts the physics of the market. What they found are
+behaviours that look odd but are real, and the model weaknesses listed above.
+
+## 6. What this means for business
+
+![Solar and wind capture rates]({FIG}/17_solar_wind_capture.png)
+
+| Who | Finding | Number |
+|---|---|---|
+| Solar owner | Solar sells below the average price, and the gap is widest in spring | Solar earns {_pct(cr["solar_capture_all"])} of the average price over the period, only {_pct(sol_min["solar_capture"])} in {sol_min["month"]}; wind earns {_pct(cr["wind_capture_all"])} |
+| Industrial or EV load with flexibility | Run in the cheapest hours instead of flat | Cheapest {cs["hours_per_day"]} hours cost {cs["avg_cheapest_hours"]:.0f} vs {cs["avg_flat"]:.0f} EUR/MWh flat: {_pct(cs["saving_share"])} saving, about {cs["saving_eur_mwh"]:.0f} EUR/MWh |
+| Battery operator | Earnings are seasonal and lumpy; a simple average beats the model at 2 MWh | Best month {best_m["month"]}: {best_m["perfect_eur_day"]:.0f} EUR/day, worst {worst_m["month"]}: {worst_m["perfect_eur_day"]:.0f} (perfect foresight) |
+| Anyone buying power | Price risk sits in a few evening hours with little wind | {_pct(sp["evening_share"])} of the {sp["hours"]} spike hours are in the evening; mean wind {sp["mean_wind_gw_spike"]:.1f} GW against {sp["mean_wind_gw_other"]:.1f} |
+| Forecast users | Trust the forecast most when the weather changes; check it when nothing changes and after an extreme day | Gain {_pct(dw[0]["gain"])} (big fall in wind) and {_pct(dw[-1]["gain"])} (big rise) vs {_pct(dw[2]["gain"])} in stable weather |
+
+![Flexible load savings]({FIG}/18_flexible_load_savings.png)
+
+A flexible consumer does not need a forecast: day-ahead prices are published the day before.
+The cheapest block of four hours starts at 11:00 or 12:00 on {_pct(sum(cs["block_start_hour_share"].get(h, 0) for h in ("10", "11", "12", "13")))} of days, which is consistent with solar driving the saving.
+If one MW of load can run those four hours instead of staying flat, the energy cost falls by
+about {cs["saving_eur_mwh"]:.0f} EUR per MWh moved, roughly {cs["eur_per_mw_year_if_load_is_hours"]:,.0f} EUR per MW and year before grid
+charges and levies.
+
+![Battery earnings by season and weather]({FIG}/19_battery_by_season_weather.png)
+
+Battery earnings follow the season: {best_m["perfect_eur_day"] / worst_m["perfect_eur_day"]:.1f} times higher in the best month than in the worst.
+The weather model helps most on cold, dull days (about {bf["temperature"][0]["model_minus_naive"]:+.0f} EUR per day over yesterday)
+and loses on hot days ({bf["temperature"][3]["model_minus_naive"]:+.0f}); these day groups are exploratory.
+
+For a non-technical reader: the weather decides the price, solar and wind push it down by roughly
+{abs(eff["solar_gw"]["effect"]):.0f} EUR/MWh per GW, evenings with no wind are where the money and the risk are, and
+a plain average of recent prices is a surprisingly strong planning tool.
+
 ## What this means
 
 * The forecasting work is sound and honestly measured: a {_pct(w["skill_vs_baseline"])} lower error
@@ -279,6 +412,10 @@ is no group where the model's advantage over yesterday is clear at 2 MWh.
   and day-type comparisons are exploratory, with no multiplicity correction.
 * The dispatch model is an exact linear programme under stated physics (no ramp limits, fixed
   efficiency, no price impact). Perfect-foresight revenue is a ceiling, not an expectation.
+* The factor tables are many comparisons on one year of data; treat single bins as hints. Scenario
+  samples can be small (for example {scn["Calm winter evening"]["hours"]} calm winter evening hours).
+* Capture rates and flexible-load savings use day-ahead energy prices only: no grid fees, levies,
+  taxes or contract terms.
 * Past results; not trading or investment advice.
 
 ## Reproduce
@@ -359,3 +496,70 @@ def bi_tables(res: dict) -> dict:
         ]
     )
     return {"analysis_battery": battery, "analysis_noise": noise, "analysis_monthly_skill": monthly}
+
+
+def render_business(res: dict) -> str:
+    """Plain-language one page for non-technical readers; every number comes from `res`."""
+    fa, bat, fc, price = res["factors"], res["battery"], res["forecast"], res["price_level"]
+    sk = fc["skill"]["models"]["lgbm_weather"]
+    pn = bat["differences_per_year"]["profile_28d_minus_naive_24h"]
+    eff = fa["weather_effects"]["effects"]["all"]
+    cr, cs = fa["capture_rates"], fa["consumer_shift"]
+    sc = {x["scenario"]: x for x in fa["scenarios"]}
+    pa = price["aug_oct_2026_vs_2025"]
+    bm = fa["battery_by_factor"]["by_month"]
+    best, worst = (
+        max(bm, key=lambda r: r["perfect_eur_day"]),
+        min(bm, key=lambda r: r["perfect_eur_day"]),
+    )
+    return f"""# GridPulse DE in plain language
+
+*One page for people who do not work with data. Numbers are measured on one year of German
+day-ahead electricity prices (Oct 2025 to Oct 2026). Generated from the analysis; details and
+caveats are in [analysis.md](analysis.md).*
+
+## The question
+Can a computer forecast of tomorrow's electricity prices, built only from public data, make a
+battery (or any flexible electricity user) earn or save more money than a very simple guess?
+
+## The short answer
+* **The forecast is more accurate:** its average error is {_pct(sk["skill_vs_baseline"])} lower than the guess
+  "tomorrow looks like today".
+* **That did not make a small battery richer.** The extra accuracy did not show up in revenue.
+* **A very simple method did better:** averaging the last four weeks by hour of day earned
+  about {pn["mean"]:,.0f} EUR more per MW and year than "like yesterday", with no model at all.
+* **Lesson:** judge a forecast by the decision it supports, not by its error.
+
+## What decides the price
+* **Wind and sun.** Every extra gigawatt of wind or solar lowers the price by about
+  {abs(eff["wind_gw"]["effect"]):.1f} to {abs(eff["solar_gw"]["effect"]):.1f} EUR per MWh. Wind and solar explain far more of the price than the
+  hour of the day or the temperature.
+* **A sunny weekend midday** is the cheapest time ({sc["Sunny weekend midday"]["mean_price"]:.0f} EUR/MWh on average, negative half the time).
+* **A calm winter evening** is the most expensive ({sc["Calm winter evening"]["mean_price"]:.0f} EUR/MWh on average).
+* **Prices are higher than a year ago** for the same weather and demand (about +{pa["premium_eur_mwh"]:.0f} EUR/MWh).
+  Likely fuel and carbon costs, which this project does not measure.
+
+## What it means for different readers
+| If you are... | Takeaway |
+|---|---|
+| A solar owner | Your power sells at about {_pct(cr["solar_capture_all"])} of the average price, as low as {_pct(min(r["solar_capture"] for r in cr["months"]))} in spring. Midday is crowded. |
+| A factory or EV fleet that can shift load | Running in the cheapest four hours instead of all day cuts the energy price by about {_pct(cs["saving_share"])}. Prices are published the day before: no forecast needed. |
+| A battery owner | Earnings are seasonal ({best["perfect_eur_day"]:.0f} EUR/day in the best month, {worst["perfect_eur_day"]:.0f} in the worst) and depend on a few extreme days. |
+| A power buyer | The risk sits in a few evening hours with little wind. |
+
+## When to trust the forecast
+* **More:** when the weather changes from yesterday, in spring, on sunny or windy days.
+* **Less:** in winter, when the weather is the same as yesterday, and the day after an extreme
+  price. On the {fa["anomalies"]["spike_hours_in_test"]} hours above 300 EUR/MWh the model averaged {fa["anomalies"]["spike_mean_forecast"]:.0f} against an actual {fa["anomalies"]["spike_mean_actual"]:.0f}.
+
+## What this project is not
+A personal portfolio project on open data. It is not trading or investment advice; it uses
+day-ahead energy prices only (no grid fees, taxes or intraday trading), one market and one year.
+"""
+
+
+def write_business(res: dict, path: str | Path) -> Path:
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(render_business(res), encoding="utf-8")
+    return out

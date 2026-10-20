@@ -233,3 +233,74 @@ def test_bi_tables_have_the_columns_the_power_bi_model_expects():
         )
         assert set(re.findall(r"^\tcolumn (\w+)", tmdl, re.M)) == set(frame.columns), name
         assert len(frame) > 0
+
+
+# ----------------------------------------------------------------------------- factors and business
+
+
+def _market_with_weather(days=60):
+    df = _market(days=days, seed=11)
+    rng = np.random.default_rng(12)
+    df["wind_gw"] = rng.uniform(0, 30, len(df))
+    df["solar_gw"] = np.where(df["hour_local"].between(8, 16), rng.uniform(0, 40, len(df)), 0.0)
+    df["load_gw"] = 55 + rng.normal(0, 3, len(df))
+    df["temperature_c"] = 10 + rng.normal(0, 5, len(df))
+    df["wind_speed_kmh"] = 12 + rng.normal(0, 3, len(df))
+    df["solar_kwh_m2"] = np.clip(rng.normal(0.15, 0.1, len(df)), 0, None)
+    df["cloud_cover_pct"] = rng.uniform(0, 100, len(df))
+    df["price_eur_mwh"] = 90 + 3.5 * df["load_gw"] - 3.0 * df["wind_gw"] - 3.3 * df["solar_gw"]
+    df["price_eur_mwh"] += rng.normal(0, 5, len(df))
+    return df
+
+
+def test_weather_effects_recover_known_coefficients():
+    from gridpulse.analysis.factors import weather_effects
+
+    res = weather_effects(_market_with_weather(), n_boot=40)["effects"]["all"]
+    assert res["wind_gw"]["effect"] == pytest.approx(-3.0, abs=0.2)
+    assert res["solar_gw"]["effect"] == pytest.approx(-3.3, abs=0.2)
+    assert res["load_gw"]["effect"] == pytest.approx(3.5, abs=0.3)
+
+
+def test_capture_rates_are_below_one_for_a_source_that_sells_when_prices_are_low():
+    from gridpulse.analysis.factors import capture_rates
+
+    cr = capture_rates(_market_with_weather())
+    assert 0 < cr["solar_capture_all"] < 1.0  # solar output is high exactly when price is low
+
+
+def test_consumer_shift_saves_money_and_never_costs_more_than_flat():
+    from gridpulse.analysis.factors import consumer_shift
+
+    cs = consumer_shift(_market_with_weather(), hours=4)
+    assert cs["avg_cheapest_hours"] < cs["avg_flat"]
+    assert 0 < cs["saving_share"] < 1
+    assert cs["avg_cheapest_hours"] <= cs["avg_cheapest_block"] + 1e-9  # best 4 hours <= best block
+
+
+def test_error_by_factor_bins_cover_every_hour_once():
+    pytest.importorskip("holidays")
+    from gridpulse.analysis.factors import error_by_factor, feature_frame
+
+    df = _market_with_weather(days=45)
+    ts = df["ts_utc"]
+    wf = pd.DataFrame({"ts_utc": ts, "actual": df["price_eur_mwh"]})
+    rng = np.random.default_rng(3)
+    wf["naive_24h"] = wf["actual"] + rng.normal(0, 30, len(wf))
+    wf["lgbm_weather"] = wf["actual"] + rng.normal(0, 15, len(wf))
+    ff = feature_frame(wf, df)
+    out = error_by_factor(ff, n_boot=30)
+    assert sum(b["hours"] for b in out["weekend"]["bins"]) == len(ff)
+    assert sum(b["hours"] for b in out["daypart"]["bins"]) == len(ff)
+    assert all(b["gain"] > 0 for b in out["daypart"]["bins"])  # model is built to be better
+
+
+def test_committed_business_page_matches_results():
+    import json
+    from pathlib import Path
+
+    from gridpulse.analysis.report import render_business
+
+    root = Path(__file__).resolve().parents[1] / "docs"
+    res = json.loads((root / "analysis" / "results.json").read_text(encoding="utf-8"))
+    assert render_business(res) == (root / "for-business.md").read_text(encoding="utf-8")

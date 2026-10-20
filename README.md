@@ -103,7 +103,7 @@ bound (see the noise test in the analysis). Details and limits:
 
 Central question: *is a day-ahead forecast built from public data good enough, versus the naive
 "same hour yesterday", to matter for a battery operator, and which market conditions decide where
-it wins or fails?* Full write-up with method, tables and limitations:
+it wins or fails?* Plain-language one-pager for non-technical readers: [docs/for-business.md](docs/for-business.md). Full write-up with method, tables and limitations:
 [docs/analysis.md](docs/analysis.md) and an interactive
 [dashboard](docs/analysis/dashboard.html) (download and open in a browser).
 
@@ -117,6 +117,10 @@ it wins or fails?* Full write-up with method, tables and limitations:
 | Price at equal residual load, Aug-Oct 2026 vs 2025 | +70 EUR/MWh (65 to 75) |
 | Negative-price chance when residual load <= 8 GW | 67% (2025) to 41% (2026) |
 | Nominal 80% forecast interval, actual coverage | 70% |
+| Price effect of 1 GW more wind / solar | -3.0 / -3.3 EUR/MWh (wind and solar explain 31 of the 67 points of price variation explained) |
+| Model gain in winter vs spring | 6% (interval includes zero) vs 33% |
+| Solar owner: price received vs average | 54% overall, 26% in April 2026 |
+| Flexible load in the cheapest 4 hours | 56% lower energy cost than running flat |
 
 ![Battery value](docs/analysis/figures/09_battery_value.png)
 
