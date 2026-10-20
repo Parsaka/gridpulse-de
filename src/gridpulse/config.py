@@ -10,8 +10,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     entsoe_api_key: str = ""
     storage_backend: str = "local"  # "local" or "adls"
-    adls_account_url: str = ""  # https://<account>.dfs.core.windows.net
-    adls_filesystem: str = "bronze"
+    adls_account_url: str = ""  # https://<account>.blob.core.windows.net
+    adls_filesystem: str = "bronze"  # container name
+    azure_connection_string: str = ""  # emulator (Azurite) only; real accounts use Entra ID
     mlflow_tracking_uri: str = "sqlite:///mlflow.db"
     model_dir: Path = Path("./artifacts")
     api_keys: str = ""  # comma-separated; empty disables the API (fail closed)
@@ -27,13 +28,17 @@ class Settings(BaseSettings):
 
 def make_store(settings: "Settings | None" = None):
     """Return the bronze store selected by GRIDPULSE_STORAGE_BACKEND."""
-    from gridpulse.storage import AdlsBronzeStore, BronzeStore
+    from gridpulse.storage import AzureBlobBronzeStore, BronzeStore
 
     s = settings or get_settings()
-    if s.storage_backend == "adls":
-        if not s.adls_account_url:
-            raise RuntimeError("GRIDPULSE_ADLS_ACCOUNT_URL is required for the adls backend")
-        return AdlsBronzeStore(s.adls_account_url, s.adls_filesystem)
+    if s.storage_backend in ("adls", "azure"):
+        if not (s.adls_account_url or s.azure_connection_string):
+            raise RuntimeError(
+                "set GRIDPULSE_ADLS_ACCOUNT_URL (or GRIDPULSE_AZURE_CONNECTION_STRING for Azurite)"
+            )
+        return AzureBlobBronzeStore(
+            s.adls_filesystem, s.adls_account_url, s.azure_connection_string
+        )
     if s.storage_backend != "local":
         raise ValueError(f"unknown storage backend: {s.storage_backend}")
     return BronzeStore(s.bronze_dir)

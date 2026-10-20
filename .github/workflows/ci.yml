@@ -10,14 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Start Azurite (Azure Storage emulator)
+        run: |
+          docker run -d -p 10000:10000 mcr.microsoft.com/azure-storage/azurite:3.33.0             azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e ".[dev,ml,api]"
+      - run: pip install -e ".[dev,ml,api,azure]"
       - run: ruff check .
       - run: ruff format --check .
       - run: pytest -m "not live" --cov=gridpulse --cov-report=term-missing
+        env:
+          # well-known public Azurite development credentials (emulator only, not a secret)
+          GRIDPULSE_TEST_AZURITE_CONN: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
 
   dags:
     runs-on: ubuntu-latest

@@ -35,7 +35,7 @@ flowchart LR
     S3[ENTSO-E]:::src
   end
   S1 & S2 & S3 --> ING[Python ingestion<br/>idempotent]
-  ING --> BR[(Bronze Parquet<br/>local or ADLS Gen2)]
+  ING --> BR[(Bronze Parquet<br/>local or Azure Blob/ADLS Gen2)]
   BR --> LOAD[load-warehouse<br/>upsert]
   LOAD --> PG[(PostgreSQL)]
   PG --> DBT[dbt<br/>silver / gold<br/>29 tests]
