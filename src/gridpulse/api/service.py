@@ -8,7 +8,8 @@ import httpx
 import pandas as pd
 from sqlalchemy import Engine, text
 
-from gridpulse.ingestion import brightsky
+from gridpulse.config import get_settings
+from gridpulse.ingestion import brightsky, openmeteo
 from gridpulse.ml.artifacts import load_model
 from gridpulse.ml.features import TARGET, build_features
 
@@ -36,8 +37,15 @@ HISTORY_SQL = text(
 
 
 class ForecastService:
-    def __init__(self, engine: Engine, model_dir, cache_seconds: int = 1800):
+    def __init__(
+        self,
+        engine: Engine,
+        model_dir,
+        cache_seconds: int = 1800,
+        weather_source: str | None = None,
+    ):
         self.engine = engine
+        self.weather_source = weather_source or get_settings().weather_source
         self.model, self.meta = load_model(model_dir)
         self.cache_seconds = cache_seconds
         self._cache: tuple[float, dict] | None = None
@@ -71,6 +79,13 @@ class ForecastService:
 
     # ---- weather forecast ------------------------------------------------
     def _weather_forecast(self, day) -> pd.DataFrame:
+        if self.weather_source == "openmeteo":
+            with httpx.Client(timeout=60) as client:
+                frames = [
+                    openmeteo.fetch_live_forecast(client, loc, day, day)
+                    for loc in brightsky.LOCATIONS
+                ]
+            return openmeteo.national_mean(frames)
         with httpx.Client() as client:
             frames = [brightsky.fetch_weather(client, loc, day, day) for loc in brightsky.LOCATIONS]
         w = pd.concat(frames).rename(columns=_RENAME)
@@ -111,6 +126,7 @@ class ForecastService:
         pred = (
             self.model.predict(rows[self.meta["features"]]) + rows[self.meta["anchor"]].to_numpy()
         )
+        trained_on = self.meta.get("weather_input_at_training", "observed")
         result = {
             "target_day_utc": target_day.isoformat(),
             "generated_at": datetime.now(UTC).isoformat(),
@@ -119,8 +135,12 @@ class ForecastService:
                 "trained_at": self.meta["trained_at"],
                 "test_mae_eur_mwh": self.meta["test_metrics"].get("mae"),
             },
-            "weather_input": "DWD MOSMIX forecast via Bright Sky "
-            "(model was trained on observed weather)",
+            "weather_input": (
+                "Open-Meteo forecast (best-match model), nine-station mean"
+                if self.weather_source == "openmeteo"
+                else "DWD MOSMIX forecast via Bright Sky"
+            )
+            + f"; model trained on {trained_on} weather",
             "forecast": [
                 {"ts_utc": t.isoformat(), "price_eur_mwh": round(float(p), 2)}
                 for t, p in zip(hours, pred, strict=True)

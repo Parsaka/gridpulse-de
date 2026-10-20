@@ -1,0 +1,86 @@
+name: Daily pipeline (Azure)
+
+# Runs the real pipeline every day in the cloud: ingest to the Azure data lake, load a throw-away
+# Postgres, dbt build and tests, issue tomorrow's forecast with the published model, score earlier
+# forecasts against actual prices, and persist the shadow log. Authentication is OIDC (no secret).
+# Inactive until the repository variable AZURE_CLIENT_ID exists (docs/cloud.md).
+
+on:
+  schedule:
+    - cron: "0 9 * * *"  # 09:00 UTC: today's day-ahead prices are known, tomorrow's are not yet
+  workflow_dispatch:
+
+concurrency:
+  group: gridpulse-state  # the shadow log is read-modify-write: never run two at once
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  daily:
+    if: ${{ vars.AZURE_CLIENT_ID != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gridpulse
+          POSTGRES_PASSWORD: gridpulse_local_only
+          POSTGRES_DB: gridpulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gridpulse" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      GRIDPULSE_STORAGE_BACKEND: adls
+      GRIDPULSE_ADLS_ACCOUNT_URL: ${{ vars.ADLS_ACCOUNT_URL }}
+      GRIDPULSE_MODEL_DIR: ./artifacts
+      GRIDPULSE_ALERT_WEBHOOK: ${{ secrets.ALERT_WEBHOOK }}
+      DBT_PROFILES_DIR: .  # relative to the dbt/ working directory
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[warehouse,ml,api,azure,dbt]"
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Ingest the last days (SMARD, DWD) into the data lake
+        run: gridpulse daily --days-back 3
+      - name: Load the recent partitions into a fresh Postgres
+        run: gridpulse load-warehouse --since-days 30
+      - name: dbt build (models and tests)
+        working-directory: dbt
+        run: |
+          dbt deps
+          dbt build
+      - name: Fetch the published model and the shadow log
+        run: gridpulse state-pull
+      - name: Issue tomorrow's forecast
+        run: gridpulse forecast-log
+      - name: Score earlier forecasts against actual prices
+        run: gridpulse shadow-eval --out shadow_eval.json
+      - name: Persist the shadow log and the evaluation
+        run: gridpulse state-push --eval-file shadow_eval.json
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## GridPulse daily run"
+            echo
+            echo '```json'
+            cat shadow_eval.json 2>/dev/null || echo "no evaluation yet"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Alert on failure
+        if: failure()
+        run: >
+          python -c "from gridpulse.alerts import send_alert;
+          send_alert('GridPulse daily pipeline failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}')"

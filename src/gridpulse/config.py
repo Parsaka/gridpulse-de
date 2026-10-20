@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     adls_account_url: str = ""  # https://<account>.blob.core.windows.net
     adls_filesystem: str = "bronze"  # container name
     azure_connection_string: str = ""  # emulator (Azurite) only; real accounts use Entra ID
+    weather_source: str = "openmeteo"  # live forecast input: "openmeteo" or "mosmix" (Bright Sky)
+    state_container: str = "state"  # model and shadow log in the cloud (storage backend adls)
     mlflow_tracking_uri: str = "sqlite:///mlflow.db"
     model_dir: Path = Path("./artifacts")
     api_keys: str = ""  # comma-separated; empty disables the API (fail closed)

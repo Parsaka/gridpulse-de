@@ -6,6 +6,7 @@ Airflow retries never create duplicates.
 
 import contextlib
 import io
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -104,14 +105,19 @@ class AzureBlobBronzeStore:
         return written
 
     def read(self, source: str, dataset: str, since: date | None = None) -> pd.DataFrame:
-        frames = []
+        names = []
         for blob in self.container.list_blobs(name_starts_with=f"{source}/{dataset}/"):
             if not blob.name.endswith("part.parquet"):
                 continue
             if since is not None and _partition_date(blob.name.split("/")[-2]) < since:
                 continue
-            data = self.container.download_blob(blob.name).readall()
-            frames.append(pd.read_parquet(io.BytesIO(data)))
+            names.append(blob.name)
+
+        def fetch(name: str) -> pd.DataFrame:
+            return pd.read_parquet(io.BytesIO(self.container.download_blob(name).readall()))
+
+        with ThreadPoolExecutor(max_workers=16) as pool:  # many small files: latency bound
+            frames = list(pool.map(fetch, names))
         return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 

@@ -1,0 +1,85 @@
+name: Weekly retrain (Azure)
+
+# Rebuilds the full warehouse from the data lake, trains the model on the weather forecast that
+# was really available (Open-Meteo day-before archive), and publishes it to the state container
+# only if it beats the naive baseline on the held-out window. Inactive until AZURE_CLIENT_ID exists.
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"  # Sundays 03:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: gridpulse-state
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  retrain:
+    if: ${{ vars.AZURE_CLIENT_ID != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gridpulse
+          POSTGRES_PASSWORD: gridpulse_local_only
+          POSTGRES_DB: gridpulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gridpulse" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      GRIDPULSE_STORAGE_BACKEND: adls
+      GRIDPULSE_ADLS_ACCOUNT_URL: ${{ vars.ADLS_ACCOUNT_URL }}
+      GRIDPULSE_MODEL_DIR: ./artifacts
+      GRIDPULSE_ALERT_WEBHOOK: ${{ secrets.ALERT_WEBHOOK }}
+      DBT_PROFILES_DIR: .
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[warehouse,ml,api,azure,dbt]"
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Ingest the last days (SMARD, DWD)
+        run: gridpulse daily --days-back 3
+      - name: Load the full history into a fresh Postgres
+        run: gridpulse load-warehouse
+      - name: dbt build (models and tests)
+        working-directory: dbt
+        run: |
+          dbt deps
+          dbt build
+      - name: Day-before weather forecasts for the whole history
+        run: |
+          gridpulse forecast-weather --start 2024-10-19 \
+            --end "$(date -u -d '+1 day' +%Y-%m-%d)"
+      - name: Train on the forecast weather
+        run: gridpulse train --weather forecast --no-mlflow --report-file train_report.json
+      - name: Publish the model if it beats the naive baseline
+        run: gridpulse state-push --model --no-shadow --min-skill 0.0
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## GridPulse weekly retrain"
+            echo
+            echo '```json'
+            cat train_report.json 2>/dev/null || echo "no training report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Alert on failure
+        if: failure()
+        run: >
+          python -c "from gridpulse.alerts import send_alert;
+          send_alert('GridPulse weekly retrain failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}')"

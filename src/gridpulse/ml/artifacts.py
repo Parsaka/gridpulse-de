@@ -19,7 +19,7 @@ def save_model(result, model_dir: Path, anchor: str, data_info: dict) -> Path:
         "anchor": anchor,
         "trained_at": datetime.now(UTC).isoformat(),
         "test_metrics": {k: v for k, v in result.metrics.items() if isinstance(v, int | float)},
-        "weather_input_at_training": "observed",
+        "weather_input_at_training": data_info.get("weather", "observed"),
         "data": data_info,
     }
     (model_dir / META_FILE).write_text(json.dumps(meta, indent=2), encoding="utf-8")
