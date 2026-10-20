@@ -38,7 +38,8 @@ table analysis_noise
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="analysis_noise"]}[Data]
+					Raw = Csv.Document(File.Contents(CsvFolder & "analysis_noise.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"label", type text}, {"noise_pct", type number}, {"mae", type number}, {"gain", type number}, {"gain_low", type number}, {"gain_high", type number}}, "en-US")
 				in
-					Data
+					Typed

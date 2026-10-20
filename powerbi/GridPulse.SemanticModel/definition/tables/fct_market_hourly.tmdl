@@ -161,8 +161,8 @@ table fct_market_hourly
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="fct_market_hourly"]}[Data],
-					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+					Raw = Csv.Document(File.Contents(CsvFolder & "fct_market_hourly.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"ts_utc", type datetime}, {"price_eur_mwh", type number}, {"load_mwh", type number}, {"residual_load_mwh", type number}, {"gen_wind_onshore_mwh", type number}, {"gen_wind_offshore_mwh", type number}, {"gen_solar_mwh", type number}, {"gen_biomass_mwh", type number}, {"gen_hydro_mwh", type number}, {"gen_other_renewable_mwh", type number}, {"gen_lignite_mwh", type number}, {"gen_hard_coal_mwh", type number}, {"gen_gas_mwh", type number}, {"gen_nuclear_mwh", type number}, {"gen_other_conventional_mwh", type number}, {"gen_pumped_storage_mwh", type number}, {"gen_renewable_mwh", type number}, {"gen_conventional_mwh", type number}, {"renewable_share", type number}}, "en-US")
 				in
-					Utc
+					Typed

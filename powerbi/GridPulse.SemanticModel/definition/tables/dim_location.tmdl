@@ -31,7 +31,8 @@ table dim_location
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="dim_location"]}[Data]
+					Raw = Csv.Document(File.Contents(CsvFolder & "dim_location.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"location_key", Int64.Type}, {"location", type text}, {"latitude", type number}, {"longitude", type number}, {"region_type", type text}}, "en-US")
 				in
-					Data
+					Typed

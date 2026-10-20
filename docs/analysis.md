@@ -185,7 +185,7 @@ from each forecast and paid at the **actual** price. Perfect foresight is the ce
 | 4-week average by hour | 85,901 (79,633 to 92,612) | 90% |
 | model with weather forecast | 81,707 (75,666 to 88,103) | 86% |
 | model with observed weather | 82,295 (76,098 to 88,686) | 86% |
-| lgbm_weather_fuel | 82,379 (76,254 to 88,709) | 87% |
+| model + gas and coal price | 82,379 (76,254 to 88,709) | 87% |
 | model, 25% weather noise | 77,602 (71,650 to 83,643) | 82% |
 | model, 50% weather noise | 69,993 (64,187 to 76,393) | 74% |
 | model, 100% weather noise | 53,657 (48,164 to 59,726) | 56% |

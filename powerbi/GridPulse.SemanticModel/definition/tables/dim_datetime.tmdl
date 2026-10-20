@@ -50,8 +50,8 @@ table dim_datetime
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="dim_datetime"]}[Data],
-					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}, {"ts_local", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}, {"date_local", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+					Raw = Csv.Document(File.Contents(CsvFolder & "dim_datetime.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"ts_utc", type datetime}, {"ts_local", type datetime}, {"date_local", type datetime}, {"hour_local", Int64.Type}, {"iso_weekday", Int64.Type}, {"is_weekend", type logical}, {"month_local", Int64.Type}, {"year_local", Int64.Type}}, "en-US")
 				in
-					Utc
+					Typed

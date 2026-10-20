@@ -83,8 +83,8 @@ table walk_forward_backtest
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="walk_forward_backtest"]}[Data],
-					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+					Raw = Csv.Document(File.Contents(CsvFolder & "walk_forward_backtest.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"ts_utc", type datetime}, {"actual", type number}, {"naive_24h", type number}, {"naive_168h", type number}, {"lgbm_calendar", type number}, {"lgbm_weather", type number}, {"q10", type number}, {"q90", type number}}, "en-US")
 				in
-					Utc
+					Typed

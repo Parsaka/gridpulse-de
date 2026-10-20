@@ -11,5 +11,4 @@ ref table analysis_battery
 ref table analysis_noise
 ref table analysis_monthly_skill
 
-ref expression PgServer
-ref expression PgDatabase
+ref expression CsvFolder

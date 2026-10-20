@@ -217,6 +217,31 @@ def analyze(
     log.info("analyze.done", figures=len(list((out / "figures").glob("*.png"))))
 
 
+@app.command("export-bi")
+def export_bi(
+    out: str = "data/bi",
+    model: str = "powerbi/GridPulse.SemanticModel/definition/tables",
+):
+    """Write every table of the Power BI model to CSV (columns taken from the TMDL files), so the
+    report can be refreshed without database credentials."""
+    import re
+    from pathlib import Path
+
+    from sqlalchemy import create_engine
+
+    engine = create_engine(get_settings().warehouse_url)
+    out_dir = Path(out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for tmdl in sorted(Path(model).glob("*.tmdl")):
+        cols = re.findall(r"^	column (\w+)", tmdl.read_text(encoding="utf-8"), re.M)
+        df = pd.read_sql(f"select {', '.join(cols)} from gold.{tmdl.stem}", engine)
+        for c in df.columns:
+            if isinstance(df[c].dtype, pd.DatetimeTZDtype):
+                df[c] = df[c].dt.tz_convert("UTC").dt.tz_localize(None)
+        df.to_csv(out_dir / f"{tmdl.stem}.csv", index=False, date_format="%Y-%m-%d %H:%M:%S")
+        log.info("export_bi.table", table=tmdl.stem, rows=len(df))
+
+
 @app.command("forecast-log")
 def forecast_log():
     """Issue the next-day forecast (live weather forecast) and store it for shadow evaluation."""

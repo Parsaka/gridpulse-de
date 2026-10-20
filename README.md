@@ -145,8 +145,12 @@ demo, not trading advice; see the [model card](docs/model-card.md) for its limit
 
 ## Power BI
 
-Semantic model (TMDL, 24 DAX measures, star schema over the gold tables) and a 5-page, 34-visual report (PBIR, schema-validated) in
-[powerbi/](powerbi/), with setup, page designs and limits in [docs/powerbi.md](docs/powerbi.md).
+Semantic model (TMDL, 24 DAX measures, star schema over the gold tables) and a 5-page, 34-visual
+report (PBIR, schema-validated) in [powerbi/](powerbi/). Opened and checked in Power BI Desktop with
+real data (no account or password: `gridpulse export-bi`, then open the PBIP); screenshots and
+limits in [docs/powerbi.md](docs/powerbi.md).
+
+![The answer](docs/img/powerbi-answer.png)
 
 ## Licence and data attribution
 

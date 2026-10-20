@@ -49,7 +49,8 @@ table analysis_battery
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="analysis_battery"]}[Data]
+					Raw = Csv.Document(File.Contents(CsvFolder & "analysis_battery.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"strategy", type text}, {"label", type text}, {"eur_per_mw_year", type number}, {"ci_low", type number}, {"ci_high", type number}, {"capture_of_perfect", type number}}, "en-US")
 				in
-					Data
+					Typed

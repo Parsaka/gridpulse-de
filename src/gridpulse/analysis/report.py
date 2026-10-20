@@ -486,6 +486,7 @@ LABELS = {
     "lgbm_calendar": "model without weather",
     "lgbm_weather": "model with weather forecast",
     "lgbm_weather_obs": "model with observed weather",
+    "lgbm_weather_fuel": "model + gas and coal price",
     "lgbm_weather_noise25": "model, 25% weather noise",
     "lgbm_weather_noise50": "model, 50% weather noise",
     "lgbm_weather_noise100": "model, 100% weather noise",

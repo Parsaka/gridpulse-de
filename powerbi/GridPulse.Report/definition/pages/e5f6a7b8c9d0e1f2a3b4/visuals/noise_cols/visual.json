@@ -53,6 +53,28 @@
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Aggregation": {
+                "Expression": {
+                  "Column": {
+                    "Expression": {
+                      "SourceRef": {
+                        "Entity": "analysis_noise"
+                      }
+                    },
+                    "Property": "gain"
+                  }
+                },
+                "Function": 0
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
       }
     },
     "drillFilterOtherVisuals": true,
@@ -70,7 +92,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Error reduction shrinks as weather input gets noisy'"
+                  "Value": "'Error reduction under a weather-noise stress test'"
                 }
               }
             }

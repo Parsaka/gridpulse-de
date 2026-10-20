@@ -70,8 +70,8 @@ table fct_weather_hourly
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="fct_weather_hourly"]}[Data],
-					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+					Raw = Csv.Document(File.Contents(CsvFolder & "fct_weather_hourly.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"location", type text}, {"ts_utc", type datetime}, {"temperature_c", type number}, {"wind_speed_kmh", type number}, {"wind_direction_deg", type number}, {"cloud_cover_pct", type number}, {"sunshine_min", type number}, {"solar_kwh_m2", type number}, {"precipitation_mm", type number}, {"pressure_hpa", type number}}, "en-US")
 				in
-					Utc
+					Typed

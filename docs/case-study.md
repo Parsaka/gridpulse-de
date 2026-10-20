@@ -50,8 +50,9 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - I first evaluated with observed weather as a stand-in for a forecast and called the result an
   upper bound. Archived day-before forecasts (Open-Meteo) later showed the stand-in cost almost
   nothing (23.5 vs 23.6 MAE), so my noise test had been far too pessimistic.
-- The Power BI model first used a measure property that Power BI's own parser rejects. Schema and
-  unit tests passed; only loading it with Desktop's library found it.
+- The Power BI model first used a measure property that Power BI's own parser rejects, and its
+  slicers started with the first item selected. Schema and unit tests passed; only opening it in
+  Desktop and looking at the numbers found both.
 - A 22% lower error turned out to be worth nothing for a 2 MWh battery on the day-ahead market, and
   the model lost to a four-week average on revenue. Reporting
   that, instead of only the accuracy number, was the point of asking an economic question first.
@@ -63,8 +64,8 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 
 ## Not done, said plainly
 - Only the Azure storage, Key Vault, logging and budget are deployed (Terraform, Azure for Students). Airflow, PostgreSQL and the API still run locally; nothing runs in the cloud on a schedule.
-- Power BI: the model loads in Desktop's own parser and the report opens with all pages; a data
-  refresh needs the database credentials, so visuals with data are verified only as far as
-  docs/powerbi.md says.
+- Power BI: verified in Desktop with real data on all five pages and the numbers match the analysis
+  (screenshots in docs/powerbi.md). Publishing to the Power BI service is not done (needs an
+  account).
 - No carbon price, and gas only monthly. Interval calibration lags abrupt market shifts.
 - Battery model: day-ahead only, one cycle per day, no intraday or balancing revenue.

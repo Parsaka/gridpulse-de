@@ -40,11 +40,14 @@ def test_every_measure_has_format_and_description(path):
 
 
 @pytest.mark.parametrize("path", TABLES, ids=lambda p: p.stem)
-def test_table_has_postgres_import_partition(path):
+def test_table_has_import_partition_from_csv_or_postgres(path):
     text = path.read_text(encoding="utf-8")
-    assert "PostgreSQL.Database(PgServer, PgDatabase)" in text
-    assert f'Item="{path.stem}"' in text
     assert "mode: import" in text
+    if "PostgreSQL.Database(PgServer, PgDatabase)" in text:
+        assert f'Item="{path.stem}"' in text
+    else:  # CSV mode (default): one file per table, typed columns
+        assert f'CsvFolder & "{path.stem}.csv"' in text
+        assert "Table.TransformColumnTypes" in text
 
 
 def test_relationships_point_at_existing_columns():

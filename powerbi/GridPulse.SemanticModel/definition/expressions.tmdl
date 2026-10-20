@@ -1,5 +1,2 @@
-expression PgServer = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
-	lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0001
-
-expression PgDatabase = "gridpulse" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
-	lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0002
+expression CsvFolder = "C:\Users\Parsa\Documents\gridpulse-de\data\bi\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0003
