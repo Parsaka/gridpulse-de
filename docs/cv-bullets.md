@@ -7,7 +7,7 @@ Label it as a personal project. Do not imply professional Data Engineering exper
   and ENTSO-E open data into idempotent Parquet and PostgreSQL, modelled with dbt (star schema,
   incremental facts, 29 tests, source freshness), orchestrated with Airflow (daily and weekly DAGs).
 - Trained and evaluated a LightGBM day-ahead price model against naive baselines on 2 years of
-  hourly data with a leakage test; documented that its 8% MAE gain uses observed weather and
+  hourly data with a leakage test; documented that its ~9% MAE gain (95% interval spans zero) uses observed weather and
   added a shadow-mode log to score real forecasts.
 - Served forecasts via FastAPI (API-key auth, rate limiting) with Prometheus metrics, Grafana and
   alert rules; load-tested (1000 requests, p95 829 ms) and ran a documented failure drill.
