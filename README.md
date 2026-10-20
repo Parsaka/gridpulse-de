@@ -52,8 +52,11 @@ flowchart LR
   classDef src fill:#eef,stroke:#88a
 ```
 
-Implemented and run locally: everything except the Azure deployment (Terraform is validated in CI,
-never applied; see [docs/deploy.md](docs/deploy.md)).
+Run locally: ingestion, Airflow, PostgreSQL, dbt, training and the API. Deployed to Azure (verified
+2026-10-20, Azure for Students, Sweden Central): the ADLS Gen2 data lake, Key Vault, Log Analytics and
+a budget alert, created by Terraform; the pipeline writes to and reads from that real storage
+account. Compute (Airflow, Postgres, API) does not run in Azure yet; see
+[docs/azure-setup.md](docs/azure-setup.md) and [docs/deploy.md](docs/deploy.md).
 
 Data sources and licences: [docs/data-sources.md](docs/data-sources.md). Decisions: [docs/adr](docs/adr).
 

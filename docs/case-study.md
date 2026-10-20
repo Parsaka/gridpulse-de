@@ -43,7 +43,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
   a command I can run locally.
 
 ## Not done, said plainly
-- Terraform has been validated but never applied; the Azure deployment path is documented, not run.
+- Only the Azure storage, Key Vault, logging and budget are deployed (Terraform, Azure for Students). Airflow, PostgreSQL and the API still run locally; nothing runs in the cloud on a schedule.
 - Power BI report pages are a skeleton; the model and measures are tested but the visuals are to
   be built in Desktop.
 - No gas or CO2 price inputs; accuracy claims are indicative (single test window).

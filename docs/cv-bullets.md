@@ -11,12 +11,14 @@ Label it as a personal project. Do not imply professional Data Engineering exper
   added a shadow-mode log to score real forecasts.
 - Served forecasts via FastAPI (API-key auth, rate limiting) with Prometheus metrics, Grafana and
   alert rules; load-tested (1000 requests, p95 829 ms) and ran a documented failure drill.
-- Wrote Terraform for Azure (ADLS Gen2, Key Vault, budget alerts), CI/CD on GitHub Actions with
-  OIDC login and approval-gated apply, and a Power BI semantic model in Git (TMDL, 20 DAX measures).
+- Deployed Azure infrastructure with Terraform (ADLS Gen2, Key Vault, Log Analytics, budget alerts, remote state
+  with versioning) and verified the pipeline against the real storage account; GitHub Actions with OIDC login;
+  a Power BI semantic model in Git (TMDL, 20 DAX measures).
 
 **Kurzfassung (Deutsch)**
 - Datenplattform fuer den deutschen Strommarkt (SMARD, DWD, ENTSO-E): Python-Ingestion, PostgreSQL,
   dbt, Airflow, LightGBM-Prognose, FastAPI mit Monitoring, Terraform fuer Azure, Power BI-Modell.
   Persoenliches Projekt, alle Kennzahlen im Repository nachpruefbar.
 
-Keep out of the CV until true: "deployed on Azure", "Power BI dashboard published", "production".
+Keep out of the CV until true: "Airflow/API running on Azure", "Power BI dashboard published", "production".
+True now: "Azure infrastructure deployed with Terraform", "pipeline verified against Azure Data Lake storage".
