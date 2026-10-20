@@ -1,0 +1,15 @@
+title = "gridpulse secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented local-development constants, not secrets"
+regexes = [
+  # Microsoft's published, public development key for the Azurite emulator
+  '''Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==''',
+  # default API key of the local docker-compose stack
+  '''dev-local-key''',
+  # Airflow Fernet key of the local docker-compose stack (replaced by Key Vault in the cloud)
+  '''Z3JpZHB1bHNlLWxvY2FsLWRldi1vbmx5LWtleS0xMjM=''',
+]

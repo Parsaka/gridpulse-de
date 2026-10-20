@@ -25,6 +25,29 @@ jobs:
           # well-known public Azurite development credentials (emulator only, not a secret)
           GRIDPULSE_TEST_AZURITE_CONN: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
 
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (full history, allowlist in .gitleaks.toml)
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2 detect             --source /repo --config /repo/.gitleaks.toml --no-banner --redact
+
+  minimal-install:
+    # what a stranger gets from the README quick start: only the base install plus dev tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: gridpulse --help
+      - run: pytest -m "not live"
+
   dags:
     runs-on: ubuntu-latest
     steps:

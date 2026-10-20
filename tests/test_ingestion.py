@@ -68,3 +68,18 @@ def test_bronze_read_since_filters_partitions(tmp_path):
     assert len(store.read("smard", "x")) == 72
     assert len(store.read("smard", "x", since=date(2025, 1, 2))) == 48
     assert store.read("smard", "x", since=date(2025, 2, 1)).empty
+
+
+def test_cli_imports_without_optional_dependencies():
+    """`pip install -e .[dev]` must give a working CLI: heavy extras are imported lazily."""
+    import subprocess
+    import sys
+
+    blocked = ("sqlalchemy", "psycopg", "mlflow", "lightgbm", "azure", "fastapi", "dbt", "holidays")
+    code = (
+        "import sys\n"
+        f"for m in {blocked!r}:\n"
+        "    sys.modules[m] = None  # makes `import m` raise ImportError\n"
+        "import gridpulse.cli\n"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True, capture_output=True)
