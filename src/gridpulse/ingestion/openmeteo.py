@@ -13,6 +13,14 @@ from gridpulse.ingestion.brightsky import LOCATIONS
 from gridpulse.ingestion.http import get_json
 
 BASE_URL = "https://previous-runs-api.open-meteo.com/v1/forecast"
+FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+LIVE_VARIABLES = {
+    "temperature_2m": "temperature_c",
+    "wind_speed_10m": "wind_speed_kmh",
+    "cloud_cover": "cloud_cover_pct",
+    "shortwave_radiation": "shortwave_wm2",
+    "precipitation": "precipitation_mm",
+}
 VARIABLES = {
     "temperature_2m_previous_day1": "temperature_c",
     "wind_speed_10m_previous_day1": "wind_speed_kmh",
@@ -42,6 +50,31 @@ def fetch_previous_day_forecast(
     h = payload["hourly"]
     df = pd.DataFrame({"timestamp": pd.to_datetime(h["time"], utc=True)})
     for src, dst in VARIABLES.items():
+        df[dst] = h[src]
+    df["location"] = location
+    return df
+
+
+def fetch_live_forecast(
+    client: httpx.Client, location: str, start: date, end: date
+) -> pd.DataFrame:
+    """The current best forecast for [start, end] (what is known now, for the next day)."""
+    lat, lon = LOCATIONS[location]
+    payload = get_json(
+        client,
+        FORECAST_URL,
+        params={
+            "latitude": lat,
+            "longitude": lon,
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            "hourly": ",".join(LIVE_VARIABLES),
+            "timezone": "UTC",
+        },
+    )
+    h = payload["hourly"]
+    df = pd.DataFrame({"timestamp": pd.to_datetime(h["time"], utc=True)})
+    for src, dst in LIVE_VARIABLES.items():
         df[dst] = h[src]
     df["location"] = location
     return df

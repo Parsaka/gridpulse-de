@@ -41,6 +41,20 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "bronze" {
   storage_account_id = azurerm_storage_account.lake.id
 }
 
+# Persistent state of the scheduled pipeline: the trained model and the shadow forecast log.
+resource "azurerm_storage_data_lake_gen2_filesystem" "state" {
+  name               = "state"
+  storage_account_id = azurerm_storage_account.lake.id
+}
+
+# The scheduled GitHub Actions pipeline (OIDC, no keys) reads and writes the lake and the state.
+resource "azurerm_role_assignment" "pipeline_writer" {
+  count                = var.pipeline_principal_id != "" ? 1 : 0
+  scope                = azurerm_storage_account.lake.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = var.pipeline_principal_id
+}
+
 # Data-plane access for the administrator (Owner alone cannot read or write blobs).
 resource "azurerm_role_assignment" "lake_writer" {
   scope                = azurerm_storage_account.lake.id

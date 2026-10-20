@@ -3,6 +3,8 @@
 Loads are idempotent upserts keyed on (dataset|location, ts), so re-running never duplicates.
 """
 
+import io
+
 import pandas as pd
 import structlog
 from sqlalchemy import Engine, create_engine, text
@@ -26,6 +28,7 @@ DDL = [
         ingested_at timestamptz NOT NULL, PRIMARY KEY (location, ts))""",
 ]
 
+NULL_TOKEN = "__null__"  # CSV marker for missing values in COPY
 SMARD_COLS = ["dataset", "region", "ts", "value", "ingested_at"]
 WEATHER_COLS = [
     "location",
@@ -53,20 +56,35 @@ def init_schema(engine: Engine) -> None:
 
 
 def _upsert(engine: Engine, df: pd.DataFrame, table: str, key: list[str], cols: list[str]) -> int:
+    """Bulk upsert: COPY into a temporary table, then INSERT .. ON CONFLICT DO UPDATE.
+
+    COPY is orders of magnitude faster than row-wise inserts, which matters for a full reload
+    (hundreds of thousands of rows)."""
     if df.empty:
         return 0
-    stage = f"_stage_{table.split('.')[-1]}"
     updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in cols if c not in key)
+    buf = io.StringIO()
+    df[cols].to_csv(
+        buf, index=False, header=False, na_rep=NULL_TOKEN, date_format="%Y-%m-%d %H:%M:%S%z"
+    )
+    buf.seek(0)
+    column_list = ", ".join(cols)
     with engine.begin() as conn:
-        df[cols].to_sql(stage, conn, schema="bronze", if_exists="replace", index=False)
+        conn.execute(text(f"CREATE TEMP TABLE _stage (LIKE {table}) ON COMMIT DROP"))
+        with (
+            conn.connection.cursor() as cur,
+            cur.copy(
+                f"COPY _stage ({column_list}) FROM STDIN WITH (FORMAT csv, NULL '{NULL_TOKEN}')"
+            ) as copy,
+        ):
+            while chunk := buf.read(1 << 20):
+                copy.write(chunk)
         conn.execute(
             text(
-                f"INSERT INTO {table} ({', '.join(cols)}) "
-                f"SELECT {', '.join(cols)} FROM bronze.{stage} "
+                f"INSERT INTO {table} ({column_list}) SELECT {column_list} FROM _stage "
                 f"ON CONFLICT ({', '.join(key)}) DO UPDATE SET {updates}"
             )
         )
-        conn.execute(text(f"DROP TABLE bronze.{stage}"))
     return len(df)
 
 

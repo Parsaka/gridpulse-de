@@ -22,3 +22,7 @@ output "lake_blob_url" {
   value       = azurerm_storage_account.lake.primary_blob_endpoint
   description = "Set GRIDPULSE_ADLS_ACCOUNT_URL to this value (with GRIDPULSE_STORAGE_BACKEND=azure)."
 }
+
+output "state_filesystem" {
+  value = azurerm_storage_data_lake_gen2_filesystem.state.name
+}

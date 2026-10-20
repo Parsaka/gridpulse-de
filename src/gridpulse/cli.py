@@ -242,6 +242,76 @@ def export_bi(
         log.info("export_bi.table", table=tmdl.stem, rows=len(df))
 
 
+@app.command("state-pull")
+def state_pull():
+    """Cloud job start: fetch the published model and restore the shadow forecast log."""
+    from sqlalchemy import create_engine
+
+    from gridpulse import state
+
+    settings = get_settings()
+    store = state.make_state_store(settings)
+    found = state.pull_model(store, settings.model_dir)
+    restored = state.pull_shadow(create_engine(settings.warehouse_url), store)
+    log.info("state.pulled", model=found, shadow_rows=restored)
+    if not found:
+        raise typer.Exit(code=3)  # no model published yet: run the retrain workflow first
+
+
+@app.command("state-push")
+def state_push(
+    model: bool = False,
+    shadow: bool = True,
+    eval_file: Annotated[str | None, typer.Option(help="Shadow evaluation JSON to publish")] = None,
+    min_skill: Annotated[
+        float, typer.Option(help="Refuse to publish a model whose test MAE skill is below this")
+    ] = 0.0,
+):
+    """Cloud job end: persist the shadow log (and, after a retrain, the model)."""
+    import json
+    from pathlib import Path
+
+    from sqlalchemy import create_engine
+
+    from gridpulse import state
+    from gridpulse.ml.artifacts import META_FILE
+
+    settings = get_settings()
+    store = state.make_state_store(settings)
+    if model:
+        meta = json.loads((settings.model_dir / META_FILE).read_text(encoding="utf-8"))
+        skill = meta["test_metrics"].get("mae_skill_vs_naive_24h", 0.0)
+        if skill < min_skill:  # a worse model must never replace the published one
+            log.error("state.model_rejected", skill=skill, min_skill=min_skill)
+            raise typer.Exit(code=4)
+        state.push_model(store, settings.model_dir)
+    if eval_file:
+        state.push_json(store, state.SHADOW_EVAL, json.loads(Path(eval_file).read_text("utf-8")))
+    if shadow:
+        n = state.push_shadow(create_engine(settings.warehouse_url), store)
+        log.info("state.shadow_pushed", rows=n)
+
+
+@app.command("sync-bronze")
+def sync_bronze(workers: int = 16):
+    """Copy the local bronze Parquet to the configured cloud store (idempotent, parallel)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    settings = get_settings()
+    if settings.storage_backend not in ("adls", "azure"):
+        raise typer.BadParameter("set GRIDPULSE_STORAGE_BACKEND=adls first")
+    store = make_store(settings)
+    files = [p for p in settings.bronze_dir.rglob("part.parquet")]
+
+    def upload(path):
+        name = path.relative_to(settings.bronze_dir).as_posix()
+        store.container.upload_blob(name, path.read_bytes(), overwrite=True)
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        list(pool.map(upload, files))
+    log.info("sync.done", files=len(files))
+
+
 @app.command("forecast-log")
 def forecast_log():
     """Issue the next-day forecast (live weather forecast) and store it for shadow evaluation."""
@@ -258,15 +328,19 @@ def forecast_log():
 
 
 @app.command("shadow-eval")
-def shadow_eval():
+def shadow_eval(out: Annotated[str | None, typer.Option(help="Also write the JSON here")] = None):
     """Score logged forecasts against actual prices (honest, forward-looking evaluation)."""
     import json
+    from pathlib import Path
 
     from sqlalchemy import create_engine
 
     from gridpulse.ml import shadow
 
-    typer.echo(json.dumps(shadow.evaluate(create_engine(get_settings().warehouse_url)), indent=2))
+    text = json.dumps(shadow.evaluate(create_engine(get_settings().warehouse_url)), indent=2)
+    if out:
+        Path(out).write_text(text, encoding="utf-8")
+    typer.echo(text)
 
 
 @app.command("drift")
@@ -305,9 +379,15 @@ def train(
     test_days: int = 90,
     register: Annotated[str, typer.Option(help="Feature set to register")] = "with_weather",
     no_mlflow: bool = False,
+    weather: Annotated[
+        str,
+        typer.Option(help="Training weather: observed (DWD) or forecast (Open-Meteo day-before)"),
+    ] = "observed",
+    report_file: Annotated[str | None, typer.Option(help="Also write the JSON report here")] = None,
 ):
     """Train baselines + LightGBM on gold tables, log to MLflow, write backtest to gold."""
     import json
+    from pathlib import Path
 
     from sqlalchemy import create_engine
 
@@ -316,7 +396,7 @@ def train(
 
     settings = get_settings()
     engine = create_engine(settings.warehouse_url)
-    df = data.load_training_frame(engine)
+    df = data.load_training_frame(engine, weather=weather)
     results, backtest = ml_train.train_and_evaluate(df, test_days=test_days)
     data.write_backtest(engine, backtest)
     info = {
@@ -324,6 +404,7 @@ def train(
         "first_ts": str(df["ts_utc"].min()),
         "last_ts": str(df["ts_utc"].max()),
         "test_days": test_days,
+        "weather": weather,
     }
     from gridpulse.ml import artifacts
 
@@ -332,7 +413,10 @@ def train(
     if not no_mlflow:
         registry.log_run(results, settings.mlflow_tracking_uri, info, register=register)
     summary = {r.name: {k: round(v, 4) for k, v in r.metrics.items()} for r in results}
-    typer.echo(json.dumps({"data": info, "metrics": summary}, indent=2))
+    report = json.dumps({"data": info, "metrics": summary}, indent=2)
+    if report_file:
+        Path(report_file).write_text(report, encoding="utf-8")
+    typer.echo(report)
 
 
 @app.command("daily")

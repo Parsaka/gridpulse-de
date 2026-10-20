@@ -72,3 +72,13 @@ variable "postgres_allowed_ip" {
   default     = null
   description = "Your public IPv4, allowed through the Postgres firewall (dev only)."
 }
+
+variable "pipeline_principal_id" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+    Object ID of the service principal that GitHub Actions logs in as (OIDC). It gets blob data
+    access so the scheduled pipeline can write bronze data and the shadow log. Empty = no grant.
+    Find it with: az ad sp show --id <AZURE_CLIENT_ID> --query id -o tsv
+  EOT
+}

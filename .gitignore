@@ -37,3 +37,8 @@ mlflow/
 infra/backend.hcl
 infra/tfplan*
 .cache/
+
+# Power BI Desktop local files (it also re-saves the PBIP files; regenerate with scripts/gen_*.py)
+powerbi/**/.pbi/
+powerbi/**/.platform
+powerbi/**/diagramLayout.json
