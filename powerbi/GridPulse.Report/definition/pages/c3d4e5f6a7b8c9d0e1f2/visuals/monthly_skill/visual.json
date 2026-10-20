@@ -1,0 +1,101 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "monthly_skill",
+  "position": {
+    "x": 24,
+    "y": 445,
+    "z": 0,
+    "width": 820,
+    "height": 260
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "analysis_monthly_skill"
+                    }
+                  },
+                  "Property": "month"
+                }
+              },
+              "queryRef": "analysis_monthly_skill.month",
+              "nativeQueryRef": "month"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "analysis_monthly_skill"
+                        }
+                      },
+                      "Property": "mae_naive"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(analysis_monthly_skill.mae_naive)",
+              "nativeQueryRef": "Sum of mae_naive"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "analysis_monthly_skill"
+                        }
+                      },
+                      "Property": "mae_model"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(analysis_monthly_skill.mae_model)",
+              "nativeQueryRef": "Sum of mae_model"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'MAE by test month: naive vs weather model'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

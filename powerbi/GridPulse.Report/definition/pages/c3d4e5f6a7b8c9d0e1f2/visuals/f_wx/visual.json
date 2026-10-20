@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "f_wx",
+  "position": {
+    "x": 336,
+    "y": 16,
+    "z": 0,
+    "width": 296,
+    "height": 90
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "walk_forward_backtest"
+                    }
+                  },
+                  "Property": "MAE LightGBM Weather"
+                }
+              },
+              "queryRef": "walk_forward_backtest.MAE LightGBM Weather",
+              "nativeQueryRef": "MAE LightGBM Weather"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'MAE weather model'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

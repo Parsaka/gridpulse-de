@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "k_batt",
+  "position": {
+    "x": 648,
+    "y": 150,
+    "z": 0,
+    "width": 296,
+    "height": 100
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "analysis_battery"
+                    }
+                  },
+                  "Property": "Battery Weather Model vs Naive"
+                }
+              },
+              "queryRef": "analysis_battery.Battery Weather Model vs Naive",
+              "nativeQueryRef": "Battery Weather Model vs Naive"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Battery revenue vs naive (EUR/MW/year)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "noise_cols",
+  "position": {
+    "x": 660,
+    "y": 270,
+    "z": 0,
+    "width": 596,
+    "height": 430
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "analysis_noise"
+                    }
+                  },
+                  "Property": "label"
+                }
+              },
+              "queryRef": "analysis_noise.label",
+              "nativeQueryRef": "label"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "analysis_noise"
+                        }
+                      },
+                      "Property": "gain"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(analysis_noise.gain)",
+              "nativeQueryRef": "Sum of gain"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Error reduction shrinks as weather input gets noisy'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

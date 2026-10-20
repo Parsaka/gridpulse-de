@@ -93,12 +93,32 @@ pip install -e ".[warehouse,ml]"
 gridpulse train --test-days 90      # baselines + LightGBM, logs to MLflow, writes gold.price_forecast_backtest
 ```
 
-On the last 90 days, LightGBM with weather inputs reaches MAE 32.7 vs 36.1 EUR/MWh for the
-"same hour yesterday" baseline, **but that uses observed weather as a forecast proxy and is an
-upper bound** and its gain over the baseline is not statistically distinguishable from zero (95%
-interval -0.9% to +18.1%); without weather the model is clearly worse than the baseline. Details and
-limits:
+Evaluated walk-forward over 13 months (monthly retraining, 9,192 out-of-sample hours), LightGBM
+with weather inputs reaches MAE 23.5 vs 30.3 EUR/MWh for "same hour yesterday": **22% lower
+(95% interval 18% to 26%)**. That uses observed weather as a forecast proxy, so it is an upper
+bound (see the noise test in the analysis). Details and limits:
 [docs/model-card.md](docs/model-card.md).
+
+## Analysis: does the forecast matter economically?
+
+Central question: *is a day-ahead forecast built from public data good enough, versus the naive
+"same hour yesterday", to matter for a battery operator, and which market conditions decide where
+it wins or fails?* Full write-up with method, tables and limitations:
+[docs/analysis.md](docs/analysis.md) and an interactive
+[dashboard](docs/analysis/dashboard.html) (download and open in a browser).
+
+| Finding | Number (95% interval) |
+|---|---|
+| Forecast error vs yesterday, walk-forward | 22% lower (18% to 26%), 12 of 13 months better |
+| Battery revenue vs naive forecast (1 MW / 2 MWh) | +153 EUR/MW/year (-1,968 to +2,430): **no measurable difference** |
+| Naive forecast as share of perfect-foresight revenue | 86% |
+| Price at equal residual load, Aug-Oct 2026 vs 2025 | +70 EUR/MWh (65 to 75) |
+| Negative-price chance when residual load <= 8 GW | 67% (2025) to 41% (2026) |
+| Nominal 80% forecast interval, actual coverage | 70% |
+
+![Battery value](docs/analysis/figures/09_battery_value.png)
+
+Reproduce: `gridpulse walk-forward --first-test-month 2025-10-01 --n-months 13 && gridpulse analyze`.
 
 ## API and monitoring
 
@@ -114,7 +134,7 @@ demo, not trading advice; see the [model card](docs/model-card.md) for its limit
 
 ## Power BI
 
-Semantic model (TMDL, 20 DAX measures, star schema over the gold tables) and a report skeleton in
+Semantic model (TMDL, 23 DAX measures, star schema over the gold tables) and a 5-page, 33-visual report (PBIR, schema-validated) in
 [powerbi/](powerbi/), with setup, page designs and limits in [docs/powerbi.md](docs/powerbi.md).
 
 ## Licence and data attribution

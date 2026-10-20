@@ -74,6 +74,78 @@ def bootstrap_ci(n_boot: int = 4000):
     typer.echo(json.dumps(res, indent=2))
 
 
+@app.command("walk-forward")
+def walk_forward_cmd(
+    first_test_month: str = "2025-10-01", n_months: int = 12, out: str = "data/analysis"
+):
+    """Monthly-retrained walk-forward backtest (mean + 10/90% quantile models) over a year."""
+    from pathlib import Path
+
+    from sqlalchemy import create_engine
+
+    from gridpulse.analysis.walkforward import walk_forward
+    from gridpulse.ml import data
+
+    engine = create_engine(get_settings().warehouse_url)
+    df = data.load_training_frame(engine)
+    wf, folds = walk_forward(
+        df,
+        first_test_month,
+        n_months,
+        progress=lambda m, n: log.info("walkforward.fold", month=str(m.date()), hours=n),
+    )
+    Path(out).mkdir(parents=True, exist_ok=True)
+    wf.to_parquet(Path(out) / "walkforward.parquet", index=False)
+    wf.to_sql("walk_forward_backtest", engine, schema="gold", if_exists="replace", index=False)
+    log.info("walkforward.done", hours=len(wf), folds=len(folds))
+
+
+@app.command("analyze")
+def analyze(
+    data_dir: str = "data/analysis",
+    docs_dir: str = "docs",
+    n_boot: int = 2000,
+    from_parquet: bool = True,
+):
+    """Run the full analysis: results.json, figures, interactive dashboard and docs/analysis.md."""
+    import json
+    import shutil
+    from pathlib import Path
+
+    import pandas as pd
+    from sqlalchemy import create_engine
+
+    from gridpulse.analysis import dashboard, figures, report
+    from gridpulse.analysis.compute import compute
+    from gridpulse.analysis.data import load_hourly
+
+    engine = create_engine(get_settings().warehouse_url)
+    df = load_hourly(engine)
+    src = Path(data_dir) / "walkforward.parquet"
+    wf = (
+        pd.read_parquet(src)
+        if from_parquet and src.exists()
+        else pd.read_sql("select * from gold.walk_forward_backtest", engine, parse_dates=["ts_utc"])
+    )
+    wf["ts_utc"] = pd.to_datetime(wf["ts_utc"], utc=True)
+    res = compute(df, wf, n_boot=n_boot)
+    out = Path(data_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "results.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    figures.make_figures(res, df, wf, out / "figures")
+    dash = dashboard.build_dashboard(res, df, wf, out / "dashboard.html")
+    docs = Path(docs_dir)
+    (docs / "analysis" / "figures").mkdir(parents=True, exist_ok=True)
+    for png in (out / "figures").glob("*.png"):
+        shutil.copy(png, docs / "analysis" / "figures" / png.name)
+    shutil.copy(dash, docs / "analysis" / "dashboard.html")
+    shutil.copy(out / "results.json", docs / "analysis" / "results.json")
+    report.write_report(res, docs / "analysis.md")
+    for name, table in report.bi_tables(res).items():  # feeds the Power BI report
+        table.to_sql(name, engine, schema="gold", if_exists="replace", index=False)
+    log.info("analyze.done", figures=len(list((out / "figures").glob("*.png"))))
+
+
 @app.command("forecast-log")
 def forecast_log():
     """Issue the next-day forecast (live weather forecast) and store it for shadow evaluation."""

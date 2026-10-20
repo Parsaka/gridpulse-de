@@ -1,0 +1,82 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "battery_bars",
+  "position": {
+    "x": 24,
+    "y": 270,
+    "z": 0,
+    "width": 620,
+    "height": 430
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "analysis_battery"
+                    }
+                  },
+                  "Property": "label"
+                }
+              },
+              "queryRef": "analysis_battery.label",
+              "nativeQueryRef": "label"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "analysis_battery"
+                        }
+                      },
+                      "Property": "eur_per_mw_year"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(analysis_battery.eur_per_mw_year)",
+              "nativeQueryRef": "Sum of eur_per_mw_year"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Battery revenue by forecast used (EUR/MW/year)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

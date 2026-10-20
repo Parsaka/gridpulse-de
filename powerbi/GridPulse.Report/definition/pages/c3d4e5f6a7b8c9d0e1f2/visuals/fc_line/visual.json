@@ -1,0 +1,120 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "fc_line",
+  "position": {
+    "x": 24,
+    "y": 120,
+    "z": 0,
+    "width": 820,
+    "height": 310
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_datetime"
+                    }
+                  },
+                  "Property": "date_local"
+                }
+              },
+              "queryRef": "dim_datetime.date_local",
+              "nativeQueryRef": "date_local"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "walk_forward_backtest"
+                        }
+                      },
+                      "Property": "actual"
+                    }
+                  },
+                  "Function": 1
+                }
+              },
+              "queryRef": "Avg(walk_forward_backtest.actual)",
+              "nativeQueryRef": "Avg of actual"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "walk_forward_backtest"
+                        }
+                      },
+                      "Property": "naive_24h"
+                    }
+                  },
+                  "Function": 1
+                }
+              },
+              "queryRef": "Avg(walk_forward_backtest.naive_24h)",
+              "nativeQueryRef": "Avg of naive_24h"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "walk_forward_backtest"
+                        }
+                      },
+                      "Property": "lgbm_weather"
+                    }
+                  },
+                  "Function": 1
+                }
+              },
+              "queryRef": "Avg(walk_forward_backtest.lgbm_weather)",
+              "nativeQueryRef": "Avg of lgbm_weather"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Actual vs forecasts, daily mean (EUR/MWh)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

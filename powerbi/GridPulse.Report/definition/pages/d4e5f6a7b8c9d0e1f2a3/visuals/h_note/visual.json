@@ -1,0 +1,46 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "h_note",
+  "position": {
+    "x": 24,
+    "y": 150,
+    "z": 0,
+    "width": 1232,
+    "height": 200
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Pipeline health",
+                    "textStyle": {
+                      "fontSize": "16pt",
+                      "fontWeight": "bold"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": "Daily ingestion, dbt tests and forecast logging run in Airflow; metrics and alerts are in Grafana. See docs/runbook.md.",
+                    "textStyle": {
+                      "fontSize": "11pt",
+                      "fontWeight": "normal"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

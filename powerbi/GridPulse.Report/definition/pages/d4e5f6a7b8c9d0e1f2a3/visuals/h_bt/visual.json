@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "h_bt",
+  "position": {
+    "x": 872,
+    "y": 16,
+    "z": 0,
+    "width": 384,
+    "height": 110
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "walk_forward_backtest"
+                    }
+                  },
+                  "Property": "Backtest Hours"
+                }
+              },
+              "queryRef": "walk_forward_backtest.Backtest Hours",
+              "nativeQueryRef": "Backtest Hours"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Backtest hours'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

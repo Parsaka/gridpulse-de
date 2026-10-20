@@ -1,0 +1,95 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "scatter_wind",
+  "position": {
+    "x": 24,
+    "y": 16,
+    "z": 0,
+    "width": 620,
+    "height": 330
+  },
+  "visual": {
+    "visualType": "scatterChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_datetime"
+                    }
+                  },
+                  "Property": "date_local"
+                }
+              },
+              "queryRef": "dim_datetime.date_local",
+              "nativeQueryRef": "date_local"
+            }
+          ]
+        },
+        "X": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_weather_hourly"
+                    }
+                  },
+                  "Property": "Avg Wind Speed kmh"
+                }
+              },
+              "queryRef": "fct_weather_hourly.Avg Wind Speed kmh",
+              "nativeQueryRef": "Avg Wind Speed kmh"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_market_hourly"
+                    }
+                  },
+                  "Property": "Avg Price"
+                }
+              },
+              "queryRef": "fct_market_hourly.Avg Price",
+              "nativeQueryRef": "Avg Price"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Windy days are cheaper days'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

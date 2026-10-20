@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "h_fresh",
+  "position": {
+    "x": 24,
+    "y": 16,
+    "z": 0,
+    "width": 400,
+    "height": 110
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_market_hourly"
+                    }
+                  },
+                  "Property": "Data Freshness h"
+                }
+              },
+              "queryRef": "fct_market_hourly.Data Freshness h",
+              "nativeQueryRef": "Data Freshness h"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Hours since last price'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

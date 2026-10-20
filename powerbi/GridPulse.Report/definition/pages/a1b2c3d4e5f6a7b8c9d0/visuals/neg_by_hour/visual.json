@@ -1,0 +1,77 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "neg_by_hour",
+  "position": {
+    "x": 24,
+    "y": 425,
+    "z": 0,
+    "width": 500,
+    "height": 280
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_datetime"
+                    }
+                  },
+                  "Property": "hour_local"
+                }
+              },
+              "queryRef": "dim_datetime.hour_local",
+              "nativeQueryRef": "hour_local"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_market_hourly"
+                    }
+                  },
+                  "Property": "Negative Price Hours"
+                }
+              },
+              "queryRef": "fct_market_hourly.Negative Price Hours",
+              "nativeQueryRef": "Negative Price Hours"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Negative prices happen at midday'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

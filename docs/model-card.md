@@ -5,7 +5,30 @@
 gold tables built by dbt. **Split:** chronological, train / 60-day validation (early stopping) /
 last 90 days test. The test window was not used for any modelling decision.
 
-## Results (test: 90 days, 2,160 hours)
+## Primary result: walk-forward, 13 months (9,192 hours)
+
+Each month is predicted by models trained only on earlier data (monthly retraining, 60-day
+validation block for early stopping). 95% day-block bootstrap intervals, 383 days.
+
+| Model | MAE (EUR/MWh) | vs naive-24h |
+|---|---|---|
+| naive: same hour yesterday | 30.3 [28.1, 32.3] | baseline |
+| naive: same hour last week | 38.6 | -28% (-38% to -18%) |
+| LightGBM, calendar + lags only | 28.8 | +4.9% (-0.2% to +9.4%): interval includes zero |
+| LightGBM, + observed weather | **23.5** [22.3, 24.8] | **+22% (+18% to +26%)** |
+
+- 12 of 13 months are better than the baseline in the point estimate (8 with an interval
+  excluding zero); December 2025 was slightly worse (not significant).
+- Weather noise test (illustrative Gaussian noise on the weather inputs): gain 20% at 25% noise,
+  17% at 50%, 4% (interval includes zero) at 100%.
+- The 10/90% quantile interval covers 70% of hours instead of 80%; in price spikes only 32%.
+- Economic value: no measurable difference in battery revenue versus the naive forecast
+  (+153 EUR/MW/year, interval -1,968 to +2,430). See [analysis.md](analysis.md).
+
+## Earlier single-window result (last 90 days, 2,160 hours)
+
+Kept for transparency; superseded by the walk-forward result above, which covers a longer period
+and therefore gives tighter intervals.
 
 | Model | MAE (EUR/MWh) | RMSE | MAE vs naive-24h |
 |---|---|---|---|
@@ -35,8 +58,8 @@ last 90 days test. The test window was not used for any modelling decision.
 
 ## Next steps that would make this credible
 1. Collect real MOSMIX forecasts daily from now on and evaluate on genuine forecasts (shadow mode).
-2. Add gas/CO2 price features (public sources) and walk-forward cross-validation with intervals.
+2. Add gas/CO2 price features (public sources) and calibrate the quantile intervals (conformal).
 3. Retrain weekly in Airflow and monitor drift (phase 7).
 
-Reproduce: `gridpulse load-warehouse && (cd dbt && dbt build --full-refresh) && gridpulse train && gridpulse bootstrap-ci`.
+Reproduce: `gridpulse load-warehouse && (cd dbt && dbt build --full-refresh) && gridpulse walk-forward --first-test-month 2025-10-01 --n-months 13 && gridpulse analyze` (single window: `gridpulse train && gridpulse bootstrap-ci`).
 Tracking: MLflow (SQLite), model registered as `gridpulse-price-lgbm`.

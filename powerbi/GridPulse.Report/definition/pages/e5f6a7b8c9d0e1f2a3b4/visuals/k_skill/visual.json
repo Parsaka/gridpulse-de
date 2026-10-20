@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "k_skill",
+  "position": {
+    "x": 24,
+    "y": 150,
+    "z": 0,
+    "width": 296,
+    "height": 100
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "walk_forward_backtest"
+                    }
+                  },
+                  "Property": "MAE Skill vs Naive"
+                }
+              },
+              "queryRef": "walk_forward_backtest.MAE Skill vs Naive",
+              "nativeQueryRef": "MAE Skill vs Naive"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Forecast error vs same hour yesterday'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

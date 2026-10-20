@@ -1,0 +1,90 @@
+table walk_forward_backtest
+	column ts_utc
+		dataType: dateTime
+		formatString: yyyy-MM-dd HH:mm
+		summarizeBy: none
+		sourceColumn: ts_utc
+
+	column actual
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: actual
+
+	column naive_24h
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: naive_24h
+
+	column naive_168h
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: naive_168h
+
+	column lgbm_calendar
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: lgbm_calendar
+
+	column lgbm_weather
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: lgbm_weather
+
+	column q10
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: q10
+
+	column q90
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: q90
+
+	measure 'MAE Naive 24h' = AVERAGEX(walk_forward_backtest, ABS(walk_forward_backtest[actual] - walk_forward_backtest[naive_24h]))
+		formatString: #,0.00
+		description: Mean absolute error of the same-hour-yesterday baseline in EUR/MWh.
+
+	measure 'MAE LightGBM Weather' = AVERAGEX(walk_forward_backtest, ABS(walk_forward_backtest[actual] - walk_forward_backtest[lgbm_weather]))
+		formatString: #,0.00
+		description: MAE of the LightGBM model that uses observed weather as a forecast proxy. Optimistic upper bound.
+
+	measure 'MAE LightGBM Calendar' = AVERAGEX(walk_forward_backtest, ABS(walk_forward_backtest[actual] - walk_forward_backtest[lgbm_calendar]))
+		formatString: #,0.00
+		description: MAE of the LightGBM model without weather inputs.
+
+	measure 'RMSE Naive 24h' = SQRT(AVERAGEX(walk_forward_backtest, (walk_forward_backtest[actual] - walk_forward_backtest[naive_24h]) ^ 2))
+		formatString: #,0.00
+		description: Root mean squared error of the same-hour-yesterday baseline.
+
+	measure 'RMSE LightGBM Weather' = SQRT(AVERAGEX(walk_forward_backtest, (walk_forward_backtest[actual] - walk_forward_backtest[lgbm_weather]) ^ 2))
+		formatString: #,0.00
+		description: RMSE of the weather model. Optimistic upper bound.
+
+	measure 'MAE Skill vs Naive' = 1 - DIVIDE([MAE LightGBM Weather], [MAE Naive 24h])
+		formatString: 0.0%
+		description: Relative MAE improvement over the naive baseline. Negative means worse than the baseline.
+
+	measure 'Backtest Hours' = COUNTROWS(walk_forward_backtest)
+		formatString: #,0
+		description: Hours in the walk-forward backtest.
+
+	measure 'Interval Coverage' = DIVIDE(COUNTROWS(FILTER(walk_forward_backtest, walk_forward_backtest[actual] >= walk_forward_backtest[q10] && walk_forward_backtest[actual] <= walk_forward_backtest[q90])), COUNTROWS(walk_forward_backtest))
+		formatString: 0.0%
+		description: Share of hours inside the model's 10-90% interval. Nominal 80%; lower means overconfident.
+
+	partition walk_forward_backtest = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database(PgServer, PgDatabase),
+					Data = Source{[Schema="gold", Item="walk_forward_backtest"]}[Data],
+					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+				in
+					Utc
