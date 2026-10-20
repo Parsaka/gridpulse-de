@@ -19,7 +19,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 | ML | LightGBM against naive baselines, MLflow, shadow-mode forecast log, PSI drift | Evaluated on a chronological split, then on real forecasts going forward |
 | Serving | FastAPI, API-key auth, rate limit, Prometheus metrics, Grafana, alert rules | Fails closed, observable |
 | IaC and CI | Terraform (azurerm) validated in CI, GitHub Actions, OIDC workflow for Azure | Reproducible infrastructure; no stored cloud secrets |
-| BI | Power BI semantic model as TMDL in Git, 23 DAX measures, tested | Reviewable BI code |
+| BI | Power BI semantic model as TMDL in Git, 24 DAX measures, tested | Reviewable BI code |
 
 ## Results (measured, 2 years of hourly data, 17,520 rows)
 - Pipeline: daily chain runs ingestion to dbt tests to forecast logging in one Airflow DAG.

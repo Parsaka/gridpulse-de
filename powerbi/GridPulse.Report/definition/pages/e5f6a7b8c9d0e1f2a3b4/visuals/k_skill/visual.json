@@ -5,7 +5,7 @@
     "x": 24,
     "y": 150,
     "z": 0,
-    "width": 296,
+    "width": 240,
     "height": 100
   },
   "visual": {
@@ -47,7 +47,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Forecast error vs same hour yesterday'"
+                  "Value": "'Error vs yesterday'"
                 }
               }
             }
