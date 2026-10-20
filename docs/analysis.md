@@ -150,21 +150,21 @@ spikes is partly by construction, but the overall 70% is not.
 
 Setup: a 1 MW / 2 MWh battery, round-trip efficiency
 88%, 3 EUR/MWh
-degradation cost, one cycle per day on the day-ahead market, scheduled by exact dynamic programming
+degradation cost, one cycle per day on the day-ahead market, scheduled by an exact linear programme
 from each forecast and paid at the **actual** price. Perfect foresight is the ceiling.
 
 ![Battery value](analysis/figures/09_battery_value.png)
 
 | Strategy | EUR/MW/year | Share of perfect foresight |
 |---|---|---|
-| perfect | 95,165 (88,901 to 102,102) | 100% |
-| naive_24h | 82,167 (75,784 to 88,698) | 86% |
-| lgbm_calendar | 80,624 (74,603 to 86,629) | 85% |
-| profile_28d | 85,901 (79,633 to 92,612) | 90% |
-| lgbm_weather | 82,295 (76,098 to 88,686) | 86% |
-| lgbm_weather_noise25 | 77,602 (71,650 to 83,643) | 82% |
-| lgbm_weather_noise50 | 69,993 (64,187 to 76,393) | 74% |
-| lgbm_weather_noise100 | 53,657 (48,164 to 59,726) | 56% |
+| perfect foresight | 95,165 (88,901 to 102,102) | 100% |
+| same hour yesterday | 82,167 (75,784 to 88,698) | 86% |
+| model without weather | 80,624 (74,603 to 86,629) | 85% |
+| 4-week average by hour | 85,901 (79,633 to 92,612) | 90% |
+| model with observed weather | 82,295 (76,098 to 88,686) | 86% |
+| model, 25% weather noise | 77,602 (71,650 to 83,643) | 82% |
+| model, 50% weather noise | 69,993 (64,187 to 76,393) | 74% |
+| model, 100% weather noise | 53,657 (48,164 to 59,726) | 56% |
 
 Over 382 days the weather model earns +128 EUR/MW/year more than yesterday's
 price (interval -1,945 to +2,263), and the model without weather -1,543

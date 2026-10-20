@@ -198,14 +198,14 @@ spikes is partly by construction, but the overall 70% is not.
 
 Setup: a 1 MW / 2 MWh battery, round-trip efficiency
 {_pct(bat["parameters"]["round_trip_efficiency"])}, {bat["parameters"]["throughput_cost_eur_per_mwh"]:.0f} EUR/MWh
-degradation cost, one cycle per day on the day-ahead market, scheduled by exact dynamic programming
+degradation cost, one cycle per day on the day-ahead market, scheduled by an exact linear programme
 from each forecast and paid at the **actual** price. Perfect foresight is the ceiling.
 
 ![Battery value]({FIG}/09_battery_value.png)
 
 | Strategy | EUR/MW/year | Share of perfect foresight |
 |---|---|---|
-{chr(10).join(f"| {k} | {v['eur_per_mw_year']:,.0f} ({v['ci_per_year'][0]:,.0f} to {v['ci_per_year'][1]:,.0f}) | {_pct(v['capture_of_perfect'])} |" for k, v in st.items())}
+{chr(10).join(f"| {LABELS.get(k, k)} | {v['eur_per_mw_year']:,.0f} ({v['ci_per_year'][0]:,.0f} to {v['ci_per_year'][1]:,.0f}) | {_pct(v['capture_of_perfect'])} |" for k, v in st.items())}
 
 Over {bat["n_days"]} days the weather model earns {d["mean"]:+,.0f} EUR/MW/year more than yesterday's
 price (interval {_ci(d["ci"])}), and the model without weather {dcal["mean"]:+,.0f}
