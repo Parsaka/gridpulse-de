@@ -7,6 +7,7 @@ from airflow.decorators import task
 from airflow.operators.bash import BashOperator
 
 from gridpulse import pipeline
+from gridpulse.alerts import send_alert
 from gridpulse.ingestion import brightsky, smard
 
 log = logging.getLogger(__name__)
@@ -22,15 +23,14 @@ DEFAULT_ARGS = {
 
 
 def notify_failure(context):
-    """Hook point for alerting. Phase 7 wires this to Azure Monitor / email."""
+    """Log the failure and push it to the alert webhook (GRIDPULSE_ALERT_WEBHOOK) if configured."""
     ti = context["task_instance"]
-    log.error(
-        "ALERT task failed: dag=%s task=%s map_index=%s try=%s",
-        ti.dag_id,
-        ti.task_id,
-        ti.map_index,
-        ti.try_number,
+    message = (
+        f"GridPulse ALERT: task failed: dag={ti.dag_id} task={ti.task_id} "
+        f"map_index={ti.map_index} try={ti.try_number}"
     )
+    log.error(message)
+    send_alert(message)
 
 
 @task

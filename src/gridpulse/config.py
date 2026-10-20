@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("./data")
     log_level: str = "INFO"
     entsoe_api_key: str = ""
+    alert_webhook: str = ""  # Slack/Teams/Discord/any webhook URL; empty = log only
     storage_backend: str = "local"  # "local" or "adls"
     adls_account_url: str = ""  # https://<account>.blob.core.windows.net
     adls_filesystem: str = "bronze"  # container name

@@ -4,15 +4,36 @@ updates:
     directory: "/"
     schedule: {interval: weekly}
     open-pull-requests-limit: 5
+    ignore:
+      # pinned to the minor version that was tested; widening it let pip pick a dbt beta
+      - dependency-name: "dbt-core"
+      - dependency-name: "dbt-postgres"
   - package-ecosystem: github-actions
     directory: "/"
     schedule: {interval: weekly}
+    ignore:
+      # only used by infra.yml, which cannot run without an Azure subscription (unverifiable)
+      - dependency-name: "azure/login"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "actions/download-artifact"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: "/docker/api"
     schedule: {interval: weekly}
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: docker
     directory: "/docker/airflow"
     schedule: {interval: weekly}
+    ignore:
+      # Airflow 3 is a breaking migration; the dags CI job tests 2.10 only
+      - dependency-name: "apache/airflow"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: terraform
     directory: "/infra"
     schedule: {interval: weekly}
+    ignore:
+      # never applied, so a major provider bump cannot be verified
+      - dependency-name: "hashicorp/azurerm"
+        update-types: ["version-update:semver-major"]

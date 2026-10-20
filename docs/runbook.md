@@ -34,8 +34,7 @@ approximate:
 | +41 s | alert cleared |
 
 Detection to firing alert was about 1.5 minutes, set by the 15 s scrape interval and the rule's
-`for: 1m`. Not covered yet: notification delivery (Alertmanager or Azure Monitor action group),
-which comes with the Azure deployment.
+`for: 1m`. Notification delivery was added and verified afterwards, see below.
 
 ## Load test (scripts/load_test.py, API in Docker, same laptop, 1 container, 1 worker)
 | Endpoint | Requests / concurrency | Result |
@@ -65,3 +64,16 @@ These are laptop numbers for a pandas-backed endpoint and say nothing about prod
   with the same season one year earlier (calendar and weather features excluded). On 2026-10-18 it
   flagged all price-level features (PSI 1.9 to 8.3), which is real: prices are far above last
   October. It exits 99 and Airflow shows the task as skipped (a warning), not failed.
+
+## Alert delivery (verified locally on 2026-10-20)
+- Prometheus sends alerts to Alertmanager (`monitoring/alertmanager.yml`), which posts them to a
+  webhook. Locally the receiver is the `alert-sink` service (logs every POST); for a real chat tool,
+  replace the URL with a Slack, Teams, Mattermost or Discord webhook. Airflow task failures use the
+  same mechanism through `GRIDPULSE_ALERT_WEBHOOK` (`gridpulse.alerts.send_alert`, never raises).
+- Drill: Postgres stopped, `WarehouseUnreachable` firing message delivered to the receiver about
+  101 s later; Postgres restarted, resolved message delivered 54 s later. The Airflow failure
+  callback was exercised inside the Airflow container and its message reached the receiver.
+- Not covered: a real chat webhook (needs your workspace URL) and Azure Monitor action groups.
+- Port note: Windows can reserve ports (for example 3000 and 8000) after a reboot; set
+  `GRAFANA_PORT` / `API_PORT` to override the published ports (`netsh int ipv4 show excludedportrange protocol=tcp`).
+
