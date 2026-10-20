@@ -24,14 +24,17 @@ Four sub-questions follow from it, each answered below with one method:
 | | Result | Evidence |
 |---|---|---|
 | Statistically better? | **Yes.** Mean absolute error 23.5 vs 30.3 EUR/MWh, 22% lower | 95% interval 18% to 26%; better in 12 of 13 months |
-| Economically better? | **No measurable difference.** Battery revenue +153 EUR/MW/year vs the naive forecast | interval -1,968 to +2,430, spans zero |
-| Why not? | The naive forecast already earns 86% of the perfect-foresight ceiling, and the model stays weak in spikes (a likely, untested explanation) | Sections 3 and 4 |
+| Economically better? | **No measurable difference.** Battery revenue +128 EUR/MW/year vs the naive forecast | interval -1,945 to +2,263, spans zero |
+| A free alternative? | **Yes, and it wins.** A plain average of the last 4 weeks by hour of day earns +3,735 EUR/MW/year more than yesterday's price and +3,606 more than the model | intervals +1,894 to +5,685 and +2,041 to +5,235; its MAE is *worse* (31.8) |
+| Does battery size change it? | **Yes.** At 1 h it is no better (-1,161, interval -2,483 to +69), at 4 h it wins (+4,000, interval +1,635 to +6,414) | Section 4 |
+| Why not at 2 h? | Dispatch needs the ranking of hours, and the model does not rank the expensive hours better than yesterday (62% vs 62% top-3 hit rate); yesterday already earns 86% of the ceiling | Section 4 |
 | Is the model well calibrated? | **No.** The nominal 80% interval covers 70% | Section 3 |
 | Caveat that matters most | The weather model is fed *observed* weather, i.e. a perfect weather forecast. It is an upper bound | Section 3, noise test |
 
-The honest conclusion: the project's headline accuracy gain is real, but on this evidence it is
-not a reason to run a forecasting stack for a 1 MW battery. The cheap forecast is already
-86% as good as knowing tomorrow's prices exactly.
+The honest conclusion: the accuracy gain is real, but for a 2 MWh battery it buys nothing, and a free
+4-week average beats both yesterday and the model. The forecast only starts to pay for longer storage,
+and even there the free average keeps up. The most useful finding is about the yardstick: accuracy
+and decision value are different things.
 
 ## 1. The market moved: same conditions, much higher prices
 
@@ -47,6 +50,10 @@ do not explain it. Over a full year the gap is smaller (+22, interval
 04: +15, 05: +27, 06: +34, 07: +38, 08: +63, 09: +68 EUR/MWh (April to September).
 
 ![Same residual load, higher price](analysis/figures/02_same_residual_load_higher_price.png)
+
+The gap is not uniform. In hours with strongly negative residual load (the lowest bin of the curve,
+below 0 GW) prices sit near zero in both years (median -1.98 in 2025 and
+0.00 in 2026): the premium lives in the hours where fossil plants set the price.
 
 This pattern points to the fuel and carbon price level, which the platform does not observe.
 **This is a statement about what is *not* explained by load and renewables, not a measured cause.**
@@ -95,6 +102,7 @@ change from the same hour yesterday. Result tables are over 9,192 hours
 |---|---|---|
 | Same hour last week | 38.6 | -28% (-38% to -18%) |
 | **Same hour yesterday (baseline)** | **30.3** | |
+| 4-week average by hour (no model) | 31.8 | -4.9% (-12.6% to 1.7%) |
 | Model without weather | 28.8 | 4.9% (-0.2% to 9.4%) |
 | Model with observed weather | **23.5** | **22%** (18% to 26%) |
 
@@ -121,7 +129,9 @@ at all. The real-world gain therefore lies between those numbers and the headlin
 
 ![Error structure](analysis/figures/07_error_structure.png)
 
-**Where it wins and loses.** The relative gain is largest in the low 0-60 price
+**Where it wins and loses.** (Regimes are defined by the realised price, so these splits condition on
+the outcome: extreme prices look worse partly by construction. Read them as a description of where
+errors sit, not as a forecastable risk.) The relative gain is largest in the low 0-60 price
 regime (35% lower error). In
 spikes above 300 EUR/MWh the model still misses by 133 EUR/MWh on
 average (60 hours): it improves on the baseline but remains unreliable exactly where it
@@ -131,7 +141,8 @@ would matter.
 
 **Uncertainty is understated.** The model's 10 to 90% interval is meant to cover 80% of hours; it
 covers 70%. The worst regime is spike >300 (32%,
-60 hours). The model is too confident, and more so when it matters.
+60 hours). The model is too confident; the regime split conditions on the realised price, so its low coverage in
+spikes is partly by construction, but the overall 70% is not.
 
 ![Interval coverage](analysis/figures/10_interval_coverage.png)
 
@@ -146,30 +157,72 @@ from each forecast and paid at the **actual** price. Perfect foresight is the ce
 
 | Strategy | EUR/MW/year | Share of perfect foresight |
 |---|---|---|
-| perfect | 94,798 (88,523 to 101,638) | 100% |
-| naive_24h | 81,894 (75,458 to 88,408) | 86% |
-| lgbm_calendar | 80,431 (74,460 to 86,390) | 85% |
-| lgbm_weather | 82,047 (75,856 to 88,441) | 87% |
-| lgbm_weather_noise25 | 76,990 (71,099 to 83,034) | 81% |
-| lgbm_weather_noise50 | 69,253 (63,473 to 75,363) | 73% |
-| lgbm_weather_noise100 | 52,721 (47,151 to 58,830) | 56% |
+| perfect | 95,165 (88,901 to 102,102) | 100% |
+| naive_24h | 82,167 (75,784 to 88,698) | 86% |
+| lgbm_calendar | 80,624 (74,603 to 86,629) | 85% |
+| profile_28d | 85,901 (79,633 to 92,612) | 90% |
+| lgbm_weather | 82,295 (76,098 to 88,686) | 86% |
+| lgbm_weather_noise25 | 77,602 (71,650 to 83,643) | 82% |
+| lgbm_weather_noise50 | 69,993 (64,187 to 76,393) | 74% |
+| lgbm_weather_noise100 | 53,657 (48,164 to 59,726) | 56% |
 
-Over 382 days the weather model earns +153 EUR/MW/year more than yesterday's
-price (interval -1,968 to +2,430), and the model without weather -1,463
-(-3,449 to +369). **A 22% lower forecast error does not move battery
-revenue.** The naive forecast already captures 86%
-of the achievable value because the daily shape (cheap midday, expensive evening) repeats. A likely
-second reason (not tested separately): dispatch depends on the *ranking* of hours within a day, and
-the error reduction does not necessarily improve that ranking. With noisy weather the model falls clearly *below* the naive
-forecast (69,253 EUR/MW/year at 50% noise).
+Over 382 days the weather model earns +128 EUR/MW/year more than yesterday's
+price (interval -1,945 to +2,263), and the model without weather -1,543
+(-3,498 to +288). **A 22% lower forecast error does not move battery
+revenue at 2 MWh.** With noisy weather the model falls clearly *below* the naive forecast
+(69,993 EUR/MW/year at 50% noise).
+
+### The cheapest forecast wins
+
+A plain average of the last 4 weeks, by hour of day, needs no model and no weather. Its error is
+*larger* than yesterday's (31.8 against 30.3 EUR/MWh) but it earns
++3,735 EUR/MW/year more than yesterday's price (interval +1,894 to +5,685) and
++3,606 more than the weather model (interval +2,041 to +5,235). A battery needs the *ranking* of
+hours within a day, not the price level. Consistent with that, the average puts 67%
+of each day's three most expensive hours in its own top three, against
+62% for the weather model and 62% for yesterday
+(mean within-day rank correlation 0.84, 0.84 and
+0.78). The model removes level error that the schedule does not use.
+This is an explanation consistent with the data, not a proven mechanism.
+
+![Cumulative revenue](analysis/figures/11_cumulative_revenue.png)
+
+Revenue is lumpy: the best 38 days earn 24% of the
+perfect-foresight total, and the weather model beats yesterday on only
+43% of days, with gains (5,645 EUR) and
+losses (-5,511 EUR) almost cancelling over the period.
+
+### Does battery size change the answer?
+
+![Battery size](analysis/figures/12_battery_size.png)
+
+Yes. Holding power at 1 MW and varying capacity:
+
+| Duration | Yesterday | 4-week average | Weather model | Perfect | Model minus yesterday |
+|---|---|---|---|---|---|
+| 1 h | 43,599 | 45,066 | 42,439 | 50,969 | -1,161 (-2,483 to +69) |
+| 2 h | 82,167 | 85,901 | 82,295 | 95,165 | +128 (-1,862 to +2,404) |
+| 4 h | 139,333 | 143,845 | 143,333 | 158,155 | +4,000 (+1,635 to +6,414) |
+
+The longer the storage, the more hours there are to rank and the more a good forecast is worth. At
+4 h the model is clearly better than yesterday, but the free 4-week average is as good
+as the model (143,845 against 143,333). The 2 MWh case used above is one
+point on this curve.
+
+![Day types](analysis/figures/13_day_types.png)
+
+By kind of day (exploratory, six overlapping groups, no correction for multiple comparisons) there
+is no group where the model's advantage over yesterday is clear at 2 MWh.
 
 ## What this means
 
 * The forecasting work is sound and honestly measured: a 22% lower error
   than the obvious benchmark, over 13 strictly out-of-sample months.
-* For a small day-ahead battery operator the same work is not worth much: the benchmark is
-  already close to the ceiling. The value would have to come from elsewhere (intraday trading,
-  balancing markets, larger spreads, or better spike detection).
+* For a short (2 MWh per MW) day-ahead battery the model is not worth running: a free 4-week
+  average earns more. Its value appears for longer storage (4 h), where it matches the
+  free average, so even there the simple option is the benchmark to beat.
+* Accuracy is the wrong yardstick for dispatch: the forecast with the worst error earned the most
+  among the three practical options. Evaluate forecasts by the decision they feed.
 * The market itself is the larger story: prices at equal physical conditions are
   70 EUR/MWh higher, negative prices are less likely, and spikes are
   concentrated in dark, low-wind evenings.
@@ -183,6 +236,10 @@ forecast (69,253 EUR/MW/year at 50% noise).
 * The price premium is a regression residual, not a causal estimate; fuel and carbon prices are not
   in the data.
 * Quantile intervals are not conformally calibrated; coverage is reported, not fixed.
+* The battery bootstrap resamples days independently; day-to-day dependence is ignored. The size
+  and day-type comparisons are exploratory, with no multiplicity correction.
+* The dispatch model is an exact linear programme under stated physics (no ramp limits, fixed
+  efficiency, no price impact). Perfect-foresight revenue is a ceiling, not an expectation.
 * Past results; not trading or investment advice.
 
 ## Reproduce

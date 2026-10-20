@@ -23,6 +23,7 @@ C = {
     "y25": "#64748b",
     "y26": "#dc2626",
     "grid": "#e5e7eb",
+    "profile": "#7c3aed",
 }
 SOURCE = "Data: Bundesnetzagentur | SMARD.de (CC BY 4.0), Deutscher Wetterdienst. GridPulse DE."
 
@@ -162,6 +163,7 @@ def fig_skill(res, df, path):
     models = [
         ("naive_168h", "same hour\nlast week", C["naive"], sk["models"]["naive_168h"]),
         ("naive_24h", "same hour\nyesterday", C["naive"], sk["baseline"]),
+        ("profile_28d", "4-week average\nby hour", C["profile"], sk["models"]["profile_28d"]),
         ("lgbm_calendar", "model without\nweather", C["calendar"], sk["models"]["lgbm_calendar"]),
         ("lgbm_weather", "model with\nobserved weather", C["model"], sk["models"]["lgbm_weather"]),
     ]
@@ -266,6 +268,7 @@ def fig_battery(res, df, path):
     st = res["battery"]["strategies"]
     order = [
         ("perfect", "perfect\nforesight", C["perfect"]),
+        ("profile_28d", "4-week average\nby hour", C["profile"]),
         ("lgbm_weather", "weather\nmodel", C["model"]),
         ("lgbm_weather_noise50", "model, 50%\nweather noise", "#60a5fa"),
         ("lgbm_weather_noise100", "model, 100%\nweather noise", "#93c5fd"),
@@ -305,6 +308,18 @@ def fig_battery(res, df, path):
         else f"and battery revenue differs by {d['mean']:+,.0f} EUR/MW/year"
     )
     ax.set_title(f"{100 * gain:.0f}% lower forecast error, {verdict}", fontsize=11.5)
+    pv = res["battery"]["differences_per_year"]["profile_28d_minus_naive_24h"]
+    if pv["ci"][0] > 0:
+        ax.text(
+            0.99,
+            0.97,
+            f"A plain 4-week average by hour earns {pv['mean']:+,.0f} EUR/MW/year\nmore than yesterday's price (interval {pv['ci'][0]:+,.0f} to {pv['ci'][1]:+,.0f})",
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize=9,
+            color=C["profile"],
+        )
 
     note = (
         f"Battery {p['power_mw']:.0f} MW / {p['capacity_mwh']:.0f} MWh, round-trip efficiency "
@@ -334,6 +349,86 @@ def fig_interval(res, df, path):
     return _finish(fig, path)
 
 
+def fig_cumulative(res, df, path):
+    cu = res["battery"]["cumulative"]
+    days = pd.to_datetime(cu["days"])
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    spec = [
+        ("perfect", "perfect foresight", C["perfect"], 2.4),
+        ("profile_28d", "4-week average by hour", C["profile"], 2),
+        ("lgbm_weather", "weather model", C["model"], 2),
+        ("naive_24h", "same hour yesterday", C["naive"], 2),
+    ]
+    for k, lab, col, lw in spec:
+        ax.plot(days, np.array(cu[k]) / 1000, label=lab, color=col, lw=lw)
+    ax.set_ylabel("cumulative revenue of a 1 MW / 2 MWh battery (thousand EUR)")
+    conc = res["battery"]["concentration"]
+    ax.set_title(
+        f"Revenue is lumpy: the best {conc['top10pct_days']} days earn "
+        f"{100 * conc['top10pct_share_of_perfect_revenue']:.0f}% of the year"
+    )
+    ax.legend(loc="upper left")
+    return _finish(fig, path)
+
+
+def fig_sizes(res, df, path):
+    sz = res["battery"]["sizes"]
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4.6), gridspec_kw={"width_ratios": [1.2, 1]})
+    x = np.arange(len(sz))
+    w = 0.2
+    for j, (k, lab, col) in enumerate(
+        [
+            ("naive_24h", "same hour yesterday", C["naive"]),
+            ("profile_28d", "4-week average", C["profile"]),
+            ("lgbm_weather", "weather model", C["model"]),
+            ("perfect", "perfect foresight", C["perfect"]),
+        ]
+    ):
+        a1.bar(x + (j - 1.5) * w, [r[k] / 1000 for r in sz], w, label=lab, color=col)
+    a1.set_xticks(x, [f"{r['duration_h']:.0f} h" for r in sz])
+    a1.set_xlabel("battery duration at 1 MW (capacity in MWh)")
+    a1.set_ylabel("revenue (thousand EUR per MW per year)")
+    a1.legend(loc="upper left", fontsize=8)
+    a1.set_title("Longer batteries earn more")
+    d = np.array([r["model_minus_naive"] for r in sz])
+    lo = np.array([r["model_minus_naive_ci"][0] for r in sz])
+    hi = np.array([r["model_minus_naive_ci"][1] for r in sz])
+    col = [C["model"] if lo_ > 0 else "#9ca3af" for lo_ in lo]
+    a2.vlines(x, lo, hi, color=col, lw=3)
+    a2.scatter(x, d, color=col, zorder=3)
+    a2.axhline(0, color="#111827", lw=1)
+    a2.set_xticks(x, [f"{r['duration_h']:.0f} h" for r in sz])
+    a2.set_xlabel("battery duration")
+    a2.set_ylabel("weather model minus yesterday (EUR/MW/year)")
+    sig = [r for r in sz if r["model_minus_naive_ci"][0] > 0]
+    a2.set_title(
+        "The forecast starts to pay at "
+        + (f"{sig[0]['duration_h']:.0f} h" if sig else "no tested size")
+    )
+    return _finish(fig, path)
+
+
+def fig_day_types(res, df, path):
+    dt = res["battery"]["day_types"]
+    fig, ax = plt.subplots(figsize=(9.5, 4.6))
+    y = np.arange(len(dt))
+    for i, r in enumerate(dt):
+        ax.hlines(i, r["ci"][0], r["ci"][1], color=C["model"], lw=2.4)
+        ax.scatter(r["mean_diff_eur_per_day"], i, color=C["model"], zorder=3)
+    ax.axvline(0, color="#111827", lw=1)
+    ax.set_yticks(y, [f"{r['group']} (n={r['days']})" for r in dt], fontsize=8.5)
+    ax.invert_yaxis()
+    ax.set_xlabel("weather model minus yesterday (EUR per day, 95% interval)")
+    conc = res["battery"]["concentration"]
+    ax.set_title(
+        f"No kind of day where the model clearly wins: it beats yesterday on only "
+        f"{100 * conc['model_beats_naive_share_of_days']:.0f}% of days"
+    )
+    return _finish(
+        fig, path, "Exploratory: six overlapping groups, no multiplicity correction. " + SOURCE
+    )
+
+
 def make_figures(res: dict, df: pd.DataFrame, wf: pd.DataFrame, out_dir: str | Path) -> list[Path]:
     _style()
     out = Path(out_dir)
@@ -349,6 +444,9 @@ def make_figures(res: dict, df: pd.DataFrame, wf: pd.DataFrame, out_dir: str | P
         fig_forecast_week(res, df, wf, out / "08_forecast_week.png"),
         fig_battery(res, df, out / "09_battery_value.png"),
         fig_interval(res, df, out / "10_interval_coverage.png"),
+        fig_cumulative(res, df, out / "11_cumulative_revenue.png"),
+        fig_sizes(res, df, out / "12_battery_size.png"),
+        fig_day_types(res, df, out / "13_day_types.png"),
     ]
     if res["forecast"]["noise"]:
         paths.insert(5, fig_noise(res, df, out / "06_noise_sensitivity.png"))

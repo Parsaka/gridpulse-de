@@ -28,9 +28,13 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - Model, walk-forward over 9,192 out-of-sample hours: MAE 23.5 EUR/MWh with observed weather vs
   30.3 for "same hour yesterday" (22% lower, 95% interval 18% to 26%); without weather the gain
   is 4.9% and the interval includes zero.
-- Economic value: a 1 MW / 2 MWh battery scheduled from the model earns +153 EUR/MW/year versus the
-  naive forecast (interval -1,968 to +2,430), i.e. no measurable difference; the naive forecast
+- Economic value: a 1 MW / 2 MWh battery scheduled from the model earns +128 EUR/MW/year versus the
+  naive forecast (interval -1,945 to +2,263), i.e. no measurable difference; the naive forecast
   already reaches 86% of perfect-foresight revenue.
+- A free alternative wins: a plain 4-week average by hour of day, with a worse error (MAE 31.8),
+  earns +3,735 EUR/MW/year more than yesterday (interval +1,894 to +5,685) and more than the model.
+  The model only pulls clearly ahead of yesterday for a 4 h battery (+4,000, interval +1,635 to
+  +6,414), where the free average keeps up with it.
 - Market findings: at equal residual load, Aug-Oct 2026 prices are 70 EUR/MWh above 2025;
   negative prices at low residual load fell from 67% to 41% of hours.
 - API on one laptop container: 1000 requests at concurrency 20, all 200, p95 829 ms.
@@ -44,7 +48,8 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - The headline accuracy gain uses observed weather as a stand-in for a forecast, so it is an upper
   bound; a noise test shows it shrinks to 4% when the weather input is very noisy. A shadow log
   measures real forecasts going forward.
-- A 22% lower error turned out to be worth nothing for a battery on the day-ahead market. Reporting
+- A 22% lower error turned out to be worth nothing for a 2 MWh battery on the day-ahead market, and
+  the model lost to a four-week average on revenue. Reporting
   that, instead of only the accuracy number, was the point of asking an economic question first.
 - Drift monitoring flagged every seasonal feature until the reference window became "same season
   last year"; the remaining price-level drift is real.

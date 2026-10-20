@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 import numpy as np
 import pandas as pd
 
-from gridpulse.analysis import stats
+from gridpulse.analysis import extras, stats
 from gridpulse.analysis.arbitrage import DEFAULT_BATTERY, backtest, summarise
 from gridpulse.ml.uncertainty import day_block_bootstrap
 
@@ -70,7 +70,9 @@ def noise_sensitivity(wf: pd.DataFrame, n_boot: int = 2000) -> list[dict]:
 
 
 def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
-    wf = stats.with_regime(wf)
+    wf = stats.with_regime(extras.add_profile_forecast(wf, df))
+    if wf["profile_28d"].isna().any():
+        raise ValueError("profile forecast needs 28 days of history before the first test day")
     a, b = stats.window(df, *PERIOD_A), stats.window(df, *PERIOD_B)
 
     monthly_premium = []
@@ -85,12 +87,25 @@ def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
     }
 
     strategies = {"perfect": "actual", "naive_24h": "naive_24h", "lgbm_calendar": "lgbm_calendar"}
+    strategies["profile_28d"] = "profile_28d"
     strategies["lgbm_weather"] = "lgbm_weather"
     for c in wf.columns:
         if c.startswith("lgbm_weather_noise"):
             strategies[c] = c
     daily = backtest(wf, strategies)
     battery = summarise(daily, n_boot=n_boot)
+    d = (daily["profile_28d"] - daily["lgbm_weather"]).to_numpy(float)
+    battery["differences_per_year"]["profile_28d_minus_lgbm_weather"] = {
+        "mean": float(d.mean() * 365),
+        "ci": [x * 365 for x in extras._boot_mean(d, n_boot)],
+    }
+    battery["ranking"] = extras.ranking_quality(
+        wf, ("naive_24h", "profile_28d", "lgbm_calendar", "lgbm_weather")
+    )
+    battery["sizes"] = extras.size_sensitivity(wf, n_boot=min(n_boot, 1000))
+    battery["day_types"] = extras.day_types(daily, wf, n_boot=n_boot)
+    battery["concentration"] = extras.concentration(daily)
+    battery["cumulative"] = extras.cumulative(daily)
     battery["parameters"] = {
         "power_mw": DEFAULT_BATTERY.power_mw,
         "capacity_mwh": DEFAULT_BATTERY.capacity_mwh,

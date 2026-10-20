@@ -110,13 +110,18 @@ it wins or fails?* Full write-up with method, tables and limitations:
 | Finding | Number (95% interval) |
 |---|---|
 | Forecast error vs yesterday, walk-forward | 22% lower (18% to 26%), 12 of 13 months better |
-| Battery revenue vs naive forecast (1 MW / 2 MWh) | +153 EUR/MW/year (-1,968 to +2,430): **no measurable difference** |
+| Battery revenue vs naive forecast (1 MW / 2 MWh) | +128 EUR/MW/year (-1,945 to +2,263): **no measurable difference** |
+| A free 4-week average by hour vs naive forecast | **+3,735 EUR/MW/year (+1,894 to +5,685)**, also above the model (+3,606), despite a *worse* MAE |
+| Weather model vs naive at 1 h / 4 h battery | -1,161 (spans zero) / **+4,000 (+1,635 to +6,414)** |
 | Naive forecast as share of perfect-foresight revenue | 86% |
 | Price at equal residual load, Aug-Oct 2026 vs 2025 | +70 EUR/MWh (65 to 75) |
 | Negative-price chance when residual load <= 8 GW | 67% (2025) to 41% (2026) |
 | Nominal 80% forecast interval, actual coverage | 70% |
 
 ![Battery value](docs/analysis/figures/09_battery_value.png)
+
+Takeaway: accuracy and decision value are different things. The most accurate forecast is not the
+one that earns the most, because a battery needs the ranking of hours, not the price level.
 
 Reproduce: `gridpulse walk-forward --first-test-month 2025-10-01 --n-months 13 && gridpulse analyze`.
 

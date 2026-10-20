@@ -168,15 +168,16 @@ def spikes(df: pd.DataFrame, threshold: float = 300.0) -> dict:
 
 # ----------------------------------------------------------------------------- forecast errors
 
-MODELS = ["naive_24h", "naive_168h", "lgbm_calendar", "lgbm_weather"]
+MODELS = ["naive_24h", "naive_168h", "profile_28d", "lgbm_calendar", "lgbm_weather"]
 
 
 def skill(wf: pd.DataFrame, n_boot: int = 4000) -> dict:
     """MAE, RMSE and day-block bootstrap intervals for every model against naive_24h."""
-    preds = [m for m in MODELS if m != "naive_24h"]
+    present = [m for m in MODELS if m in wf]
+    preds = [m for m in present if m != "naive_24h"]
     bt = wf.rename(columns={"actual": "actual"})
     res = day_block_bootstrap(bt, preds, "naive_24h", n_boot=n_boot)
-    for m in MODELS:
+    for m in present:
         e = bt["actual"] - bt[m]
         entry = res["baseline"] if m == "naive_24h" else res["models"][m]
         entry["rmse"] = float(np.sqrt((e**2).mean()))

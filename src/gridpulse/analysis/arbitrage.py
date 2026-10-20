@@ -1,15 +1,17 @@
 """What is a better day-ahead forecast worth? A battery scheduling backtest.
 
-A battery is planned one day ahead from a price FORECAST (dynamic programming over the day), then
-paid at the ACTUAL day-ahead prices. Comparing strategies that differ only in the forecast used
-(naive, model, perfect foresight) isolates the value of forecast quality.
+A battery is planned one day ahead from a price FORECAST (an exact linear programme over the day),
+then paid at the ACTUAL day-ahead prices. Comparing strategies that differ only in the forecast
+used (naive, model, perfect foresight) isolates the value of forecast quality.
 
-Deliberately simple and stated plainly: day-ahead prices only; no intraday, balancing or grid
-fees; the battery starts and ends each local day empty; one hour per step; round-trip efficiency is
-applied symmetrically; a small throughput cost stands in for degradation.
+Deliberately simple and stated plainly: day-ahead prices only; no intraday, balancing or grid fees;
+the battery starts and ends each local day empty; one hour per step; grid-side power is limited to
+`power_mw` in both directions; round-trip efficiency is split evenly between charging and
+discharging; a throughput cost per MWh sold stands in for degradation. Needs scipy (viz extra).
 """
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -20,7 +22,7 @@ class Battery:
     power_mw: float = 1.0
     capacity_mwh: float = 2.0
     round_trip_eff: float = 0.88
-    throughput_cost: float = 3.0  # EUR per MWh discharged (degradation proxy)
+    throughput_cost: float = 3.0  # EUR per MWh sold (degradation proxy)
 
     @property
     def eff_one_way(self) -> float:
@@ -30,49 +32,46 @@ class Battery:
 DEFAULT_BATTERY = Battery()
 
 
-def plan_day(prices: np.ndarray, bat: Battery = DEFAULT_BATTERY) -> np.ndarray:
-    """Optimal action per hour for the given prices: +1 charge, -1 discharge, 0 idle (in units of
-    one step of power). Exact dynamic programming over state of charge in steps of `power_mw`."""
+@lru_cache(maxsize=8)
+def _constraints(n: int, capacity: float, e: float):
+    """SOC bounds 0 <= soc_t <= capacity for every hour, and an empty battery at the end."""
+    tri = np.tril(np.ones((n, n)))
+    soc = np.hstack([tri * e, -tri / e])  # soc_t = sum_{k<=t} (c_k * e - d_k / e)
+    a_ub = np.vstack([soc, -soc])
+    b_ub = np.r_[np.full(n, capacity), np.zeros(n)]
+    a_eq = soc[-1:].copy()
+    return a_ub, b_ub, a_eq
+
+
+def plan_day(prices: np.ndarray, bat: Battery = DEFAULT_BATTERY) -> tuple[np.ndarray, np.ndarray]:
+    """Profit-maximising (charge, discharge) in grid-side MW per hour for the given prices."""
+    from scipy.optimize import linprog
+
+    prices = np.asarray(prices, float)
     n = len(prices)
-    levels = int(round(bat.capacity_mwh / bat.power_mw))  # SOC states 0..levels
-    e = bat.eff_one_way
-    neg_inf = -1e18
-    value = np.full((n + 1, levels + 1), neg_inf)
-    value[n, 0] = 0.0  # must end empty
-    choice = np.zeros((n, levels + 1), dtype=int)
-    stored = bat.power_mw  # MWh stored or released per active hour
-    for t in range(n - 1, -1, -1):
-        p = prices[t]
-        for s in range(levels + 1):
-            best, act = value[t + 1, s], 0  # idle
-            if s < levels:  # charge: buy stored/e from the grid
-                v = value[t + 1, s + 1] - p * stored / e
-                if v > best:
-                    best, act = v, 1
-            if s > 0:  # discharge: sell stored*e, pay degradation per MWh stored
-                v = value[t + 1, s - 1] + p * stored * e - bat.throughput_cost * stored
-                if v > best:
-                    best, act = v, -1
-            value[t, s], choice[t, s] = best, act
-    actions, s = np.zeros(n, dtype=int), 0
-    for t in range(n):
-        a = choice[t, s]
-        actions[t] = a
-        s += a
-    return actions
+    a_ub, b_ub, a_eq = _constraints(n, bat.capacity_mwh, bat.eff_one_way)
+    cost = np.r_[prices, -prices + bat.throughput_cost]  # minimise: buy - sell + degradation
+    res = linprog(
+        cost,
+        A_ub=a_ub,
+        b_ub=b_ub,
+        A_eq=a_eq,
+        b_eq=[0.0],
+        bounds=[(0, bat.power_mw)] * (2 * n),
+        method="highs",
+    )
+    if not res.success:  # cannot happen for finite prices; fail loudly rather than return zeros
+        raise RuntimeError(f"battery LP failed: {res.message}")
+    return res.x[:n], res.x[n:]
 
 
 def realised_profit(
-    actions: np.ndarray, prices: np.ndarray, bat: Battery = DEFAULT_BATTERY
+    plan: tuple[np.ndarray, np.ndarray], prices: np.ndarray, bat: Battery = DEFAULT_BATTERY
 ) -> float:
-    e, stored = bat.eff_one_way, bat.power_mw
-    charge = actions == 1
-    discharge = actions == -1
-    cost = (prices[charge] * stored / e).sum()
-    revenue = (
-        prices[discharge] * stored * e
-    ).sum() - bat.throughput_cost * stored * discharge.sum()
-    return float(revenue - cost)
+    """EUR earned by following `plan` when the real prices are `prices`."""
+    charge, discharge = plan
+    prices = np.asarray(prices, float)
+    return float(prices @ (discharge - charge) - bat.throughput_cost * discharge.sum())
 
 
 def backtest(
@@ -93,8 +92,7 @@ def backtest(
         actual = g["actual"].to_numpy(float)
         row = {"day": day}
         for name, col in strategies.items():
-            plan = plan_day(g[col].to_numpy(float), bat)
-            row[name] = realised_profit(plan, actual, bat)
+            row[name] = realised_profit(plan_day(g[col].to_numpy(float), bat), actual, bat)
         out.append(row)
     return pd.DataFrame(out)
 

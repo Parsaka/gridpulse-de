@@ -23,7 +23,9 @@ validation block for early stopping). 95% day-block bootstrap intervals, 383 day
   17% at 50%, 4% (interval includes zero) at 100%.
 - The 10/90% quantile interval covers 70% of hours instead of 80%; in price spikes only 32%.
 - Economic value: no measurable difference in battery revenue versus the naive forecast
-  (+153 EUR/MW/year, interval -1,968 to +2,430). See [analysis.md](analysis.md).
+  (+128 EUR/MW/year, interval -1,945 to +2,263 for a 1 MW / 2 MWh battery). A free 4-week average
+  by hour earns +3,735 EUR/MW/year more than yesterday despite a higher MAE (31.8). See
+  [analysis.md](analysis.md).
 
 ## Earlier single-window result (last 90 days, 2,160 hours)
 

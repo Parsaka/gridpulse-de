@@ -9,11 +9,13 @@ Label it as a personal project. Do not imply professional Data Engineering exper
 - Framed the project around one decision question (does a public-data price forecast matter
   economically for a battery operator?) and answered it with a 13-month walk-forward evaluation
   of a LightGBM day-ahead model: 22% lower error than the naive benchmark (95% bootstrap interval
-  18% to 26%), but no measurable battery-revenue difference (+153 EUR/MW/year, interval spans
-  zero), with a weather-noise sensitivity test and an exact dynamic-programming dispatch model.
+  18% to 26%), but no measurable battery-revenue difference (+128 EUR/MW/year, interval spans
+  zero) and a plain 4-week average earned more (+3,735 EUR/MW/year, interval +1,894 to +5,685):
+  accuracy is not decision value. Included a weather-noise sensitivity test, a battery-size
+  sensitivity and an exact linear-programming dispatch model.
 - Found that prices at equal residual load rose by about 70 EUR/MWh year on year and that
   negative-price probability at low residual load fell from 67% to 41%; published the analysis,
-  ten figures and an interactive Plotly dashboard. Added a shadow-mode log to score real forecasts.
+  thirteen figures and an interactive Plotly dashboard. Added a shadow-mode log to score real forecasts.
 - Served forecasts via FastAPI (API-key auth, rate limiting) with Prometheus metrics, Grafana and
   alert rules; load-tested (1000 requests, p95 829 ms) and ran a documented failure drill.
 - Deployed Azure infrastructure with Terraform (ADLS Gen2, Key Vault, Log Analytics, budget alerts, remote state
