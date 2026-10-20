@@ -108,6 +108,13 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports: ["3000:3000"]
 
+  # Free local Azure Storage emulator: exercises the Azure storage backend with no subscription.
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.33.0
+    profiles: ["azure-emulator"]
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+    ports: ["10000:10000"]
+
   ingest:
     build: .
     command: ["daily"]

@@ -12,7 +12,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 | Layer | Choice | Why |
 |---|---|---|
 | Ingestion | Python, httpx, tenacity; SMARD, DWD (Bright Sky), ENTSO-E | Open data, no scraping; retries and idempotent daily partitions make backfills and reruns safe |
-| Storage | Parquet bronze, local or ADLS Gen2 behind one interface | Same code path on a laptop and in Azure |
+| Storage | Parquet bronze, local or Azure Blob (ADLS Gen2), tested against the Azurite emulator | Same code path on a laptop and in Azure |
 | Orchestration | Airflow: daily chain and weekly retrain DAGs | Retries with backoff, row-count guards, failure callback |
 | Warehouse | PostgreSQL + dbt (bronze, silver, gold star schema) | Incremental facts with a reprocessing window for late data revisions |
 | Quality | 29 dbt tests, source freshness, 37 local pytest tests (plus DAG and Postgres tests in CI), leakage test for features | Failures are caught where they happen |

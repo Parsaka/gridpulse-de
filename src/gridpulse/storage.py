@@ -4,6 +4,7 @@ Writes are idempotent: re-running a day replaces that day's partition, so backfi
 Airflow retries never create duplicates.
 """
 
+import contextlib
 import io
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -51,23 +52,37 @@ class BronzeStore:
         return pd.concat((pd.read_parquet(f) for f in files), ignore_index=True)
 
 
-class AdlsBronzeStore:
-    """Same layout and semantics as BronzeStore, on Azure Data Lake Storage Gen2.
+class AzureBlobBronzeStore:
+    """Same layout and semantics as BronzeStore, on Azure Blob Storage.
 
-    Auth uses DefaultAzureCredential (az login locally, managed identity / OIDC in the cloud),
-    so no keys are stored anywhere. Needs: pip install '.[azure]'.
+    Works against a real storage account (ADLS Gen2 accounts expose the Blob API too) and against
+    the free Azurite emulator, so the Azure code path is testable without a subscription.
+    Auth: DefaultAzureCredential for real accounts (az login locally, managed identity or OIDC in
+    the cloud, no keys), or a connection string for the emulator. Needs: pip install '.[azure]'.
     """
 
-    def __init__(self, account_url: str, filesystem: str, credential=None):
-        from azure.storage.filedatalake import DataLakeServiceClient
+    def __init__(
+        self,
+        container: str,
+        account_url: str = "",
+        connection_string: str = "",
+        credential=None,
+    ):
+        from azure.core.exceptions import ResourceExistsError
+        from azure.storage.blob import BlobServiceClient
 
-        if credential is None:
-            from azure.identity import DefaultAzureCredential
+        if connection_string:
+            service = BlobServiceClient.from_connection_string(connection_string)
+        else:
+            if credential is None:
+                from azure.identity import DefaultAzureCredential
 
-            credential = DefaultAzureCredential()
-        self.fs = DataLakeServiceClient(account_url, credential=credential).get_file_system_client(
-            filesystem
-        )
+                credential = DefaultAzureCredential()
+            service = BlobServiceClient(account_url, credential=credential)
+        self.container = service.get_container_client(container)
+        if connection_string:  # emulator: create the container on first use
+            with contextlib.suppress(ResourceExistsError):
+                self.container.create_container()
 
     @staticmethod
     def partition_path(source: str, dataset: str, day: date) -> str:
@@ -83,17 +98,21 @@ class AdlsBronzeStore:
         for day, part in df.groupby(days):
             buf = io.BytesIO()
             part.to_parquet(buf, index=False)
-            file = self.fs.get_file_client(self.partition_path(source, dataset, day))
-            file.upload_data(buf.getvalue(), overwrite=True)  # overwrite = idempotent
+            name = self.partition_path(source, dataset, day)
+            self.container.upload_blob(name, buf.getvalue(), overwrite=True)  # idempotent
             written += len(part)
         return written
 
     def read(self, source: str, dataset: str, since: date | None = None) -> pd.DataFrame:
         frames = []
-        for item in self.fs.get_paths(path=f"{source}/{dataset}"):
-            if item.name.endswith("part.parquet"):
-                if since is not None and _partition_date(item.name.split("/")[-2]) < since:
-                    continue
-                data = self.fs.get_file_client(item.name).download_file().readall()
-                frames.append(pd.read_parquet(io.BytesIO(data)))
+        for blob in self.container.list_blobs(name_starts_with=f"{source}/{dataset}/"):
+            if not blob.name.endswith("part.parquet"):
+                continue
+            if since is not None and _partition_date(blob.name.split("/")[-2]) < since:
+                continue
+            data = self.container.download_blob(blob.name).readall()
+            frames.append(pd.read_parquet(io.BytesIO(data)))
         return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+AdlsBronzeStore = AzureBlobBronzeStore  # backwards-compatible name
