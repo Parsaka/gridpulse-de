@@ -52,11 +52,15 @@ flowchart LR
   classDef src fill:#eef,stroke:#88a
 ```
 
-Run locally: ingestion, Airflow, PostgreSQL, dbt, training and the API. Deployed to Azure (verified
-2026-10-20, Azure for Students, Sweden Central): the ADLS Gen2 data lake, Key Vault, Log Analytics and
-a budget alert, created by Terraform; the pipeline writes to and reads from that real storage
-account. Compute (Airflow, Postgres, API) does not run in Azure yet; see
-[docs/azure-setup.md](docs/azure-setup.md) and [docs/deploy.md](docs/deploy.md).
+**In the cloud (verified 2026-10-21, Azure for Students, Sweden Central):** Terraform created the
+ADLS Gen2 data lake (`bronze` and `state` containers), Key Vault, Log Analytics and a budget alert.
+Two scheduled GitHub Actions workflows (OIDC, no stored secret) run the real pipeline against it
+with a throw-away Postgres: a **daily** run (ingest, dbt build and tests, tomorrow's forecast, scoring
+of earlier forecasts) and a **weekly retrain** that publishes a model only if it beats the naive
+baseline. The first real runs took about 8 minutes (retrain) and 4 minutes (daily) and succeeded;
+see [docs/cloud.md](docs/cloud.md). **Locally** you can still run everything: Airflow, Postgres, dbt,
+training and the API ([docs/deploy.md](docs/deploy.md), [docs/azure-setup.md](docs/azure-setup.md)).
+No service runs 24/7 (the API is not hosted).
 
 Data sources and licences: [docs/data-sources.md](docs/data-sources.md). Decisions: [docs/adr](docs/adr).
 

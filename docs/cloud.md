@@ -49,6 +49,16 @@ history, trains on them (the live input is a forecast too, so training and use m
 publishes the model **only if** its test MAE beats the naive baseline (`--min-skill 0`). A worse
 model never replaces the published one; the run fails and alerts instead.
 
+## Verified runs (2026-10-21)
+| Run | Result | Time |
+|---|---|---|
+| Weekly retrain, `workflow_dispatch` on `main` | all steps green; model published (skill gate passed) | about 8 min |
+| Daily, `workflow_dispatch` on `main` | dbt 37 pass, 1 warning; shadow log restored (24 rows from the previous run), tomorrow's forecast logged, state pushed | about 4 min |
+
+Before that, both flows were rehearsed from a laptop against the same storage account. What is
+**not** yet shown: a scheduled (cron) trigger firing on its own, and any scored shadow hours (the
+log starts on 2026-10-21; scoring needs the following day's prices).
+
 ## Failure handling
 * Every step is a plain CLI command; any non-zero exit fails the run. GitHub emails the repository
   owner for failed scheduled runs. If the secret `ALERT_WEBHOOK` (a Slack/Teams/Discord URL) is
