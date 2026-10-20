@@ -1,16 +1,63 @@
 # GridPulse DE
 
-Data and forecasting platform for the German electricity market: open data (SMARD, ENTSO-E, DWD)
-→ Parquet bronze → dbt models → price/load forecasts → API → Power BI. Built on Azure with
-Terraform, Airflow and GitHub Actions.
+[![CI](https://github.com/Parsaka/gridpulse-de/actions/workflows/ci.yml/badge.svg)](https://github.com/Parsaka/gridpulse-de/actions/workflows/ci.yml)
+[![Daily pipeline](https://github.com/Parsaka/gridpulse-de/actions/workflows/pipeline-daily.yml/badge.svg)](https://github.com/Parsaka/gridpulse-de/actions/workflows/pipeline-daily.yml)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
-> Personal portfolio project. Status: **Phases 1–2 (ingestion, Airflow) done**; see [roadmap](docs/roadmap.md).
+**Open data on the German electricity market, turned into a price forecast, an honest answer to a
+business question, and a pipeline that runs by itself in the cloud every day.**
+
+A personal portfolio project (Parsa Kamali). Not trading or investment advice.
+
+## In one minute
+
+*The question:* is a day-ahead price forecast built only from public data good enough to be worth
+money to a battery operator, compared with a very simple guess ("tomorrow looks like today")?
+
+* The forecast **is** more accurate: its average error is **22% lower** than the guess
+  (95% interval 17% to 26%), measured on 9,192 hours the model never saw, using the weather forecast
+  that was really available the day before.
+* That **did not make a small battery earn more**. Accuracy and decision value are different things.
+* A free **4-week average by hour of day earned about 3,700 EUR more per MW and year** than the guess
+  and more than the model, despite a worse error.
+* **Gas explains the price level.** The gas price roughly doubled; that alone implies about
+  +68 EUR/MWh against +70 measured at equal demand and renewables.
+* For a **solar owner**, solar sells at about **54%** of the average price (26% in April 2026).
+  A **flexible load** that runs in the cheapest 4 hours saves about **56%** of its energy cost.
+
+![Battery revenue by forecast used](docs/analysis/figures/09_battery_value.png)
+
+Read more: [plain-language summary](docs/for-business.md) · [full analysis](docs/analysis.md) ·
+[interactive dashboard](docs/analysis/dashboard.html) (download and open) ·
+[model card](docs/model-card.md) · [how it runs in the cloud](docs/cloud.md) · [changelog](CHANGELOG.md)
+
+## What is inside
+
+| Part | What it does | Details |
+|---|---|---|
+| Ingestion | SMARD, DWD, Open-Meteo, ENTSO-E clients into idempotent Parquet | [data sources](docs/data-sources.md) |
+| Warehouse | PostgreSQL + dbt star schema, 29 data tests, source freshness | [dbt/](dbt/) |
+| Model | LightGBM predicting the change versus yesterday; shadow-mode forecast log | [model card](docs/model-card.md) |
+| Orchestration | Airflow DAGs locally; scheduled GitHub Actions in the cloud | [cloud](docs/cloud.md) |
+| Serving | FastAPI with auth, rate limit, Prometheus, Grafana, alerts | [runbook](docs/runbook.md) |
+| Infrastructure | Terraform on Azure (data lake, Key Vault, logging, budget), OIDC CI/CD | [azure setup](docs/azure-setup.md) |
+| Analysis | Walk-forward evaluation, battery dispatch, factors, gas, calibration | [analysis](docs/analysis.md) |
+| BI | Power BI model and 5-page report as text in Git, checked in Desktop | [Power BI](docs/powerbi.md) |
+
+## Status and honest limits
+* Verified: CI (7 jobs) green; the daily and weekly cloud workflows ran successfully on 2026-10-21;
+  the Power BI report opened in Desktop with real data.
+* The cloud jobs use a throw-away Postgres; the API is **not hosted 24/7**.
+* The shadow forecast log started on 2026-10-21; scored hours accumulate day by day.
+* No carbon price; gas price is monthly; one market, about two years of data.
 
 ## Screenshots (from the running system)
 
 | Airflow: daily DAG, all tasks green | Grafana: API health dashboard |
 |---|---|
 | ![Airflow daily DAG](docs/images/airflow-daily-dag.jpg) | ![Grafana API health](docs/images/grafana-api-health.jpg) |
+
+Power BI report pages are in [docs/powerbi.md](docs/powerbi.md).
 
 ## Quick start
 
