@@ -1,4 +1,4 @@
-FROM apache/airflow:2.10.5-python3.12
+FROM apache/airflow:2.11.2-python3.12
 USER root
 # LightGBM needs the OpenMP runtime, which the base image lacks
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
