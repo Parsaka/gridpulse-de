@@ -5,28 +5,35 @@ needs your Azure subscription. CI (`ci.yml`) already runs `terraform fmt` and `v
 
 ## One-time Azure and GitHub setup (you do this)
 1. Finish `docs/azure-setup.md` (account, budget, state storage).
-2. Create an app registration with a **federated credential** for this repo, so GitHub can log in
-   without a secret:
+2. Create an app registration with **federated credentials**, so GitHub can log in without a secret.
+   The `subject` must match the claim GitHub actually sends. Newer GitHub accounts and repositories send
+   the numeric ids too: `repo:<owner>@<owner-id>/<repo>@<repo-id>:pull_request`. The ids are shown in the
+   failed `azure/login` log line `subject claim - ...` (a wrong subject gives `AADSTS700213`), or via
+   `gh api repos/<owner>/<repo> --jq '.owner.id, .id'`. Create three credentials (all with issuer
+   `https://token.actions.githubusercontent.com` and audience `api://AzureADTokenExchange`) for the subjects
+   `...:ref:refs/heads/main`, `...:pull_request` and `...:environment:azure`:
    ```bash
    az ad app create --display-name gridpulse-github
-   az ad app federated-credential create --id <APP_OBJECT_ID> --parameters '{
-     "name": "github-main", "issuer": "https://token.actions.githubusercontent.com",
-     "subject": "repo:Parsaka/gridpulse-de:ref:refs/heads/main",
-     "audiences": ["api://AzureADTokenExchange"]}'
+   az ad sp create --id <APP_ID>
+   az ad app federated-credential create --id <APP_ID> --parameters @credential.json
    ```
-   Add a second credential with subject `repo:Parsaka/gridpulse-de:pull_request` for plans on PRs
-   and one with `repo:Parsaka/gridpulse-de:environment:azure` for the apply job.
-3. Give the app's service principal `Contributor` on the resource group (or subscription for the
-   first apply), plus `Storage Blob Data Contributor` on the state storage account.
+3. Give the app's service principal `Contributor` and `User Access Administrator` on the subscription
+   (the latter because the Terraform creates role assignments), plus `Storage Blob Data Contributor` on
+   the state storage account. This is broad, acceptable for a single-owner learning subscription; narrow it
+   for anything shared.
 4. In GitHub, Settings > Secrets and variables > Actions > **Variables** (not secrets, none of these
    is sensitive): `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
-   `TFSTATE_RESOURCE_GROUP`, `TFSTATE_STORAGE_ACCOUNT`, `ALERT_EMAIL`, `BUDGET_START_DATE`.
-5. Settings > Environments > create `azure` and add yourself as a required reviewer.
+   `TFSTATE_RESOURCE_GROUP`, `TFSTATE_STORAGE_ACCOUNT`, `ALERT_EMAIL`, `BUDGET_START_DATE`,
+   `ADMIN_PRINCIPAL_ID` (your user object id: `az ad signed-in-user show --query id -o tsv`).
+5. Settings > Environments > create `azure` (the federated credential for the apply job is bound to it).
+   Add yourself as a required reviewer **if your plan allows it**: GitHub's free plan does not offer
+   required reviewers on environments in private repositories (it works in public repositories). Without
+   it, the manual `workflow_dispatch` run with `action=apply` is the only gate.
 
 ## Flow
 - A PR that touches `infra/` runs `terraform plan`; the plan is attached as an artifact.
-- To change Azure: Actions > Infrastructure > Run workflow > `apply`. A reviewer must approve the
-  `azure` environment before `terraform apply` runs the exact saved plan.
+- To change Azure: Actions > Infrastructure > Run workflow > `apply`. With a required reviewer set, they must
+  approve the `azure` environment before `terraform apply` runs the exact saved plan.
 
 ## Rollback
 Infrastructure is code, so rollback is a revert:

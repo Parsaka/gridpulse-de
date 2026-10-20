@@ -1,5 +1,6 @@
 subscription_id   = "00000000-0000-0000-0000-000000000000"
 alert_email       = "you@example.com"
+admin_principal_id = "00000000-0000-0000-0000-000000000000" # az ad signed-in-user show --query id -o tsv
 budget_start_date = "2026-11-01T00:00:00Z" # first day of a month
 budget_amount_eur = 10
 

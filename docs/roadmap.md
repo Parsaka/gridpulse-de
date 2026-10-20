@@ -2,7 +2,7 @@
 
 - [x] **Phase 1 – Ingestion**: SMARD, Bright Sky, ENTSO-E clients → Parquet bronze (idempotent), CLI, tests, CI
 - [x] **Phase 2 – Orchestration**: Airflow DAGs (daily + backfill), retries, failure alerts
-- [~] **Phase 3 – Azure**: Terraform written, validated in CI, never applied (needs your Azure subscription, see docs/azure-setup.md). Azure Blob storage backend implemented and tested against the Azurite emulator (local and CI), not against a real account
+- [~] **Phase 3 – Azure**: Terraform applied to Azure for Students (Sweden Central): ADLS Gen2, Key Vault, Log Analytics, budget; re-plan shows no changes. Azure Blob storage backend verified against the real account and the Azurite emulator. Postgres and compute are not in Azure yet
 - [x] **Phase 4 – dbt**: bronze, silver, gold star schema on Postgres, incremental models, 29 data tests, source freshness, `dbt build` in CI and inside the Airflow DAG
 - [~] **Phase 5 – CI/CD**: CI runs lint, tests, dbt, Terraform validate, image build (all green). `infra.yml` (OIDC plan, approval-gated apply) written but never run; rollback documented in docs/deploy.md
 - [x] **Phase 6 – ML**: baselines, LightGBM, leakage test, MLflow registry, model card, shadow-mode forecast log, weekly retrain DAG with PSI drift check. Honest limit: headline gain uses observed weather; real-forecast scoring accumulates over time

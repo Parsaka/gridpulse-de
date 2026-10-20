@@ -17,3 +17,8 @@ output "key_vault_name" {
 output "postgres_fqdn" {
   value = try(azurerm_postgresql_flexible_server.main[0].fqdn, null)
 }
+
+output "lake_blob_url" {
+  value       = azurerm_storage_account.lake.primary_blob_endpoint
+  description = "Set GRIDPULSE_ADLS_ACCOUNT_URL to this value (with GRIDPULSE_STORAGE_BACKEND=azure)."
+}
