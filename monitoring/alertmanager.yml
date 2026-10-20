@@ -1,0 +1,14 @@
+# Routes Prometheus alerts to a webhook receiver. Locally that is the alert-sink service; to use a
+# real chat tool, replace the url with a Slack, Teams, Mattermost or Discord (append /slack) webhook.
+route:
+  receiver: webhook
+  group_by: [alertname]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h
+
+receivers:
+  - name: webhook
+    webhook_configs:
+      - url: http://alert-sink:9000/alertmanager
+        send_resolved: true

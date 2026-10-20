@@ -16,6 +16,7 @@ x-airflow-common: &airflow-common
     GRIDPULSE_MLFLOW_TRACKING_URI: sqlite:////mlflow/mlflow.db
     DBT_PROFILES_DIR: /opt/airflow/dbt
     DBT_PG_HOST: postgres
+    GRIDPULSE_ALERT_WEBHOOK: ${GRIDPULSE_ALERT_WEBHOOK:-}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./dbt:/opt/airflow/dbt
@@ -84,7 +85,7 @@ services:
       GRIDPULSE_API_KEYS: ${GRIDPULSE_API_KEYS:-dev-local-key}
       GRIDPULSE_RATE_LIMIT_PER_MIN: ${GRIDPULSE_RATE_LIMIT_PER_MIN:-60}
     volumes: ["./artifacts:/models:ro"]
-    ports: ["8000:8000"]
+    ports: ["${API_PORT:-8000}:8000"]
     depends_on:
       postgres: {condition: service_healthy}
 
@@ -96,6 +97,22 @@ services:
       - ./monitoring/rules.yml:/etc/prometheus/rules.yml:ro
     ports: ["9090:9090"]
 
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    profiles: ["monitoring"]
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports: ["9093:9093"]
+
+  # Stand-in for a chat webhook; replace the receiver URL in monitoring/alertmanager.yml and
+  # GRIDPULSE_ALERT_WEBHOOK with a real Slack/Teams/Discord webhook.
+  alert-sink:
+    image: python:3.12-slim
+    profiles: ["monitoring"]
+    command: ["python", "/sink.py"]
+    volumes: ["./docker/alert-sink/sink.py:/sink.py:ro"]
+    ports: ["9000:9000"]
+
   grafana:
     image: grafana/grafana:11.3.1
     profiles: ["monitoring"]
@@ -106,7 +123,7 @@ services:
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports: ["3000:3000"]
+    ports: ["${GRAFANA_PORT:-3000}:3000"]
 
   # Free local Azure Storage emulator: exercises the Azure storage backend with no subscription.
   azurite:
