@@ -34,6 +34,29 @@ def ingest_weather(start: Start, end: End):
         pipeline.load_weather_location(loc, start, end)
 
 
+@app.command("forecast-weather")
+def forecast_weather(start: Start, end: End):
+    """Archived day-before weather forecasts (Open-Meteo) for the same regions, national mean to
+    gold.weather_forecast_national_hourly. Lets the model be evaluated on a real forecast."""
+    import httpx
+    from sqlalchemy import create_engine
+
+    from gridpulse.ingestion import openmeteo
+
+    s, e = pipeline.as_utc(start).date(), pipeline.as_utc(end).date()
+    frames = []
+    with httpx.Client(timeout=60) as client:
+        for loc in brightsky.LOCATIONS:
+            frames.append(openmeteo.fetch_previous_day_forecast(client, loc, s, e))
+            log.info("forecast_weather.fetched", location=loc, rows=len(frames[-1]))
+    national = openmeteo.national_mean(frames)
+    engine = create_engine(get_settings().warehouse_url)
+    national.to_sql(
+        "weather_forecast_national_hourly", engine, schema="gold", if_exists="replace", index=False
+    )
+    log.info("forecast_weather.done", rows=len(national))
+
+
 @app.command("entsoe-prices")
 def ingest_entsoe_prices(start: Start, end: End):
     """Day-ahead prices for DE-LU from ENTSO-E (requires ENTSOE_API_KEY)."""
@@ -76,27 +99,45 @@ def bootstrap_ci(n_boot: int = 4000):
 
 @app.command("walk-forward")
 def walk_forward_cmd(
-    first_test_month: str = "2025-10-01", n_months: int = 12, out: str = "data/analysis"
+    first_test_month: str = "2025-10-01",
+    n_months: int = 12,
+    out: str = "data/analysis",
+    weather: str = "observed",
+    fuel: bool = False,
 ):
     """Monthly-retrained walk-forward backtest (mean + 10/90% quantile models) over a year."""
     from pathlib import Path
 
     from sqlalchemy import create_engine
 
-    from gridpulse.analysis.walkforward import walk_forward
+    from gridpulse.analysis.walkforward import NOISE_LEVELS, walk_forward
     from gridpulse.ml import data
 
     engine = create_engine(get_settings().warehouse_url)
-    df = data.load_training_frame(engine)
+    df = data.load_training_frame(engine, weather=weather)
+    extra = None
+    if fuel:  # last complete month's gas and coal price: known when forecasting
+        f = pd.read_csv("data_static/fuel_prices_monthly.csv")
+        f["month"] = pd.PeriodIndex(f["month"], freq="M") + 1  # value becomes available a month on
+        f = f.set_index("month")
+        month = df["ts_utc"].dt.tz_convert("Europe/Berlin").dt.tz_localize(None).dt.to_period("M")
+        df["gas_lag1m"] = month.map(f["gas_europe_usd_mmbtu"]).to_numpy()
+        df["coal_lag1m"] = month.map(f["coal_australia_usd_t"]).to_numpy()
+        extra = ["gas_lag1m", "coal_lag1m"]
     wf, folds = walk_forward(
         df,
         first_test_month,
         n_months,
+        noise_levels=() if weather == "forecast" else NOISE_LEVELS,
+        extra_features=extra,
         progress=lambda m, n: log.info("walkforward.fold", month=str(m.date()), hours=n),
     )
+    suffix = ("_forecast" if weather == "forecast" else "") + ("_fuel" if fuel else "")
     Path(out).mkdir(parents=True, exist_ok=True)
-    wf.to_parquet(Path(out) / "walkforward.parquet", index=False)
-    wf.to_sql("walk_forward_backtest", engine, schema="gold", if_exists="replace", index=False)
+    wf.to_parquet(Path(out) / f"walkforward{suffix}.parquet", index=False)
+    wf.to_sql(
+        f"walk_forward_backtest{suffix}", engine, schema="gold", if_exists="replace", index=False
+    )
     log.info("walkforward.done", hours=len(wf), folds=len(folds))
 
 
@@ -128,7 +169,23 @@ def analyze(
         else pd.read_sql("select * from gold.walk_forward_backtest", engine, parse_dates=["ts_utc"])
     )
     wf["ts_utc"] = pd.to_datetime(wf["ts_utc"], utc=True)
-    res = compute(df, wf, n_boot=n_boot)
+    fc_path = Path(data_dir) / "walkforward_forecast.parquet"
+    if (
+        fc_path.exists()
+    ):  # headline model = real day-before weather forecast; observed = upper bound
+        fc = pd.read_parquet(fc_path)
+        fc["ts_utc"] = pd.to_datetime(fc["ts_utc"], utc=True)
+        if not (fc["ts_utc"].to_numpy() == wf["ts_utc"].to_numpy()).all():
+            raise ValueError("forecast and observed walk-forward runs cover different hours")
+        wf["lgbm_weather_obs"] = wf["lgbm_weather"]
+        for col in ("lgbm_weather", "q10", "q90"):
+            wf[col] = fc[col].to_numpy()
+    fuel_wf = Path(data_dir) / "walkforward_forecast_fuel.parquet"
+    if fuel_wf.exists():  # the variant that also sees last month's gas and coal prices
+        wf["lgbm_weather_fuel"] = pd.read_parquet(fuel_wf)["lgbm_weather"].to_numpy()
+    fuel_path = Path("data_static/fuel_prices_monthly.csv")
+    fuel = pd.read_csv(fuel_path) if fuel_path.exists() else None
+    res = compute(df, wf, n_boot=n_boot, fuel=fuel)
     out = Path(data_dir)
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
@@ -142,9 +199,47 @@ def analyze(
     shutil.copy(out / "results.json", docs / "analysis" / "results.json")
     report.write_report(res, docs / "analysis.md")
     report.write_business(res, docs / "for-business.md")
+    bi_cols = [
+        "ts_utc",
+        "actual",
+        "naive_24h",
+        "naive_168h",
+        "lgbm_calendar",
+        "lgbm_weather",
+        "q10",
+        "q90",
+    ]
+    wf[bi_cols].to_sql(
+        "walk_forward_backtest", engine, schema="gold", if_exists="replace", index=False
+    )
     for name, table in report.bi_tables(res).items():  # feeds the Power BI report
         table.to_sql(name, engine, schema="gold", if_exists="replace", index=False)
     log.info("analyze.done", figures=len(list((out / "figures").glob("*.png"))))
+
+
+@app.command("export-bi")
+def export_bi(
+    out: str = "data/bi",
+    model: str = "powerbi/GridPulse.SemanticModel/definition/tables",
+):
+    """Write every table of the Power BI model to CSV (columns taken from the TMDL files), so the
+    report can be refreshed without database credentials."""
+    import re
+    from pathlib import Path
+
+    from sqlalchemy import create_engine
+
+    engine = create_engine(get_settings().warehouse_url)
+    out_dir = Path(out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for tmdl in sorted(Path(model).glob("*.tmdl")):
+        cols = re.findall(r"^	column (\w+)", tmdl.read_text(encoding="utf-8"), re.M)
+        df = pd.read_sql(f"select {', '.join(cols)} from gold.{tmdl.stem}", engine)
+        for c in df.columns:
+            if isinstance(df[c].dtype, pd.DatetimeTZDtype):
+                df[c] = df[c].dt.tz_convert("UTC").dt.tz_localize(None)
+        df.to_csv(out_dir / f"{tmdl.stem}.csv", index=False, date_format="%Y-%m-%d %H:%M:%S")
+        log.info("export_bi.table", table=tmdl.stem, rows=len(df))
 
 
 @app.command("forecast-log")

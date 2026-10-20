@@ -23,13 +23,13 @@ Four sub-questions follow from it, each answered below with one method:
 
 | | Result | Evidence |
 |---|---|---|
-| Statistically better? | **Yes.** Mean absolute error 23.5 vs 30.3 EUR/MWh, 22% lower | 95% interval 18% to 26%; better in 12 of 13 months |
-| Economically better? | **No measurable difference.** Battery revenue +128 EUR/MW/year vs the naive forecast | interval -1,945 to +2,263, spans zero |
-| A free alternative? | **Yes, and it wins.** A plain average of the last 4 weeks by hour of day earns +3,735 EUR/MW/year more than yesterday's price and +3,606 more than the model | intervals +1,894 to +5,685 and +2,041 to +5,235; its MAE is *worse* (31.8) |
-| Does battery size change it? | **Yes.** At 1 h it is no better (-1,161, interval -2,483 to +69), at 4 h it wins (+4,000, interval +1,635 to +6,414) | Section 4 |
-| Why not at 2 h? | Dispatch needs the ranking of hours, and the model does not rank the expensive hours better than yesterday (62% vs 62% top-3 hit rate); yesterday already earns 86% of the ceiling | Section 4 |
-| Is the model well calibrated? | **No.** The nominal 80% interval covers 70% | Section 3 |
-| Caveat that matters most | The weather model is fed *observed* weather, i.e. a perfect weather forecast. It is an upper bound | Section 3, noise test |
+| Statistically better? | **Yes.** Mean absolute error 23.6 vs 30.3 EUR/MWh, 22% lower | 95% interval 17% to 26%; better in 12 of 13 months |
+| Economically better? | **No measurable difference.** Battery revenue -460 EUR/MW/year vs the naive forecast | interval -2,588 to +1,707, spans zero |
+| A free alternative? | **Yes, and it wins.** A plain average of the last 4 weeks by hour of day earns +3,735 EUR/MW/year more than yesterday's price and +4,194 more than the model | intervals +1,894 to +5,685 and +2,514 to +5,981; its MAE is *worse* (31.8) |
+| Does battery size change it? | **Yes.** At 1 h it is worse (-1,315, interval -2,639 to -80), at 4 h it wins (+3,826, interval +1,433 to +6,279) | Section 4 |
+| Why not at 2 h? | Dispatch needs the ranking of hours, and the model does not rank the expensive hours better than yesterday (64% vs 62% top-3 hit rate); yesterday already earns 86% of the ceiling | Section 4 |
+| Is the model well calibrated? | **Not out of the box** (nominal 80% interval covers 69%); after rolling conformal calibration it covers 79% | Section 3 |
+| Is the weather input realistic? | **Yes.** The model gets the weather forecast issued the day before, not observed weather. Observed weather would give 22%, so the difference is negligible | Section 3 |
 
 The honest conclusion: the accuracy gain is real, but for a 2 MWh battery it buys nothing, and a free
 4-week average beats both yesterday and the model. The forecast only starts to pay for longer storage,
@@ -55,8 +55,9 @@ The gap is not uniform. In hours with strongly negative residual load (the lowes
 below 0 GW) prices sit near zero in both years (median -1.98 in 2025 and
 0.00 in 2026): the premium lives in the hours where fossil plants set the price.
 
-This pattern points to the fuel and carbon price level, which the platform does not observe.
-**This is a statement about what is *not* explained by load and renewables, not a measured cause.**
+**Gas price explains it.** The monthly European gas price (World Bank Pink Sheet, CC BY 4.0) went from 11.1 USD/mmbtu (Aug to Oct 2025) to 23.3 (Aug to Oct 2026). Across 24 months, the load-adjusted price level moves 5.6 EUR/MWh per USD/mmbtu (interval 3.3 to 6.8, R2 0.76). A gas plant at about 50% efficiency passes through roughly 6.8 USD per MWh for each USD/mmbtu, so the size is plausible. Applied to this change it implies about 68 EUR/MWh against the measured 70. Caveat: 24 monthly points and one gas series, so this is strong association, not proof, and carbon prices are not included.
+
+![Gas price and the price level](analysis/figures/21_gas_and_price_level.png)
 
 The slope is 3.4 EUR/MWh per GW of residual load
 (interval 3.2 to 3.7): each additional GW the
@@ -104,16 +105,30 @@ change from the same hour yesterday. Result tables are over 9,192 hours
 | **Same hour yesterday (baseline)** | **30.3** | |
 | 4-week average by hour (no model) | 31.8 | -4.9% (-12.6% to 1.7%) |
 | Model without weather | 28.8 | 4.9% (-0.2% to 9.4%) |
-| Model with observed weather | **23.5** | **22%** (18% to 26%) |
+| Model with observed weather (reference) | 23.5 | 22% (18% to 26%) |
+| Model with day-before weather forecast | **23.6** | **22%** (17% to 26%) |
+| + last month's gas and coal price | 22.6 | 25% (21% to 29%) |
 
 Weather is what makes the model work: without it the gain is 4.9% and
 the interval includes zero. With it, 12 of 13 months are better than the baseline
 (8 of them with an interval that excludes zero); the remaining months are not distinguishable
 or slightly worse, so the gain is not uniform.
 
-**The weather in this model is observed, not forecast.** To see how much that flatters the result,
-Gaussian noise (a share of each weather variable's standard deviation) was added to the weather
-inputs at prediction time. This is illustrative, not a calibrated forecast-error model:
+**Fuel prices add a little.** Giving the model the previous month's European gas and coal prices
+(the latest complete month, so nothing from the future) lowers the error from 23.6 to
+22.6 EUR/MWh (gain 25%, interval 21% to 29%; error difference
+-9.2 to -6.0 EUR/MWh against yesterday). It is not the headline model because it needs a
+manually updated monthly fuel file; battery revenue does not change either
+(+212 EUR/MW/year, interval -1,845 to +2,324).
+
+**The weather input is a real forecast.** The headline model uses the weather forecast that was
+issued the day before each hour (Open-Meteo Previous Runs archive, averaged over the nine
+stations). Training and testing both use it. A reference model with *observed* weather, the
+optimistic stand-in used earlier in this project, scores 23.5 (22%) against
+23.6 (22%) for the forecast version: a day-ahead weather forecast loses almost
+nothing here. As a stress test, Gaussian noise (a share of each weather variable's standard
+deviation) was added to the observed-weather model's inputs at prediction time. It shows how
+much the result would suffer if the forecast were much worse than it is, not what happens today:
 
 ![Noise sensitivity](analysis/figures/06_noise_sensitivity.png)
 
@@ -125,26 +140,33 @@ inputs at prediction time. This is illustrative, not a calibrated forecast-error
 | 100% of std | 29.1 | 4% (-2% to 8%) |
 
 At 100% noise the gain shrinks to 3.8%, no better than having no weather
-at all. The real-world gain therefore lies between those numbers and the headline.
+at all; the real forecast is far better than that stress level.
 
 ![Error structure](analysis/figures/07_error_structure.png)
 
 **Where it wins and loses.** (Regimes are defined by the realised price, so these splits condition on
 the outcome: extreme prices look worse partly by construction. Read them as a description of where
 errors sit, not as a forecastable risk.) The relative gain is largest in the low 0-60 price
-regime (35% lower error). In
-spikes above 300 EUR/MWh the model still misses by 133 EUR/MWh on
+regime (37% lower error). In
+spikes above 300 EUR/MWh the model still misses by 142 EUR/MWh on
 average (60 hours): it improves on the baseline but remains unreliable exactly where it
 would matter.
 
 ![Forecast week](analysis/figures/08_forecast_week.png)
 
 **Uncertainty is understated.** The model's 10 to 90% interval is meant to cover 80% of hours; it
-covers 70%. The worst regime is spike >300 (32%,
+covers 69%. The worst regime is spike >300 (27%,
 60 hours). The model is too confident; the regime split conditions on the realised price, so its low coverage in
 spikes is partly by construction, but the overall 70% is not.
 
 ![Interval coverage](analysis/figures/10_interval_coverage.png)
+
+**Calibration fixes most of it.** Widening the interval by the empirical quantile of the last 60
+days of misses (rolling conformalised quantile regression; each day uses only earlier days, after
+a 14-day warm-up) lifts coverage from 69% to 79% on the same days, at the cost
+of a wider interval (mean width 57 to 69 EUR/MWh). Coverage still dips when
+the market shifts abruptly (the worst month is 2026-03 at
+57%): rolling calibration follows regimes with a lag.
 
 ## 4. Does it earn money?
 
@@ -161,13 +183,15 @@ from each forecast and paid at the **actual** price. Perfect foresight is the ce
 | same hour yesterday | 82,167 (75,784 to 88,698) | 86% |
 | model without weather | 80,624 (74,603 to 86,629) | 85% |
 | 4-week average by hour | 85,901 (79,633 to 92,612) | 90% |
+| model with weather forecast | 81,707 (75,666 to 88,103) | 86% |
 | model with observed weather | 82,295 (76,098 to 88,686) | 86% |
+| model + gas and coal price | 82,379 (76,254 to 88,709) | 87% |
 | model, 25% weather noise | 77,602 (71,650 to 83,643) | 82% |
 | model, 50% weather noise | 69,993 (64,187 to 76,393) | 74% |
 | model, 100% weather noise | 53,657 (48,164 to 59,726) | 56% |
 
-Over 382 days the weather model earns +128 EUR/MW/year more than yesterday's
-price (interval -1,945 to +2,263), and the model without weather -1,543
+Over 382 days the weather model earns -460 EUR/MW/year more than yesterday's
+price (interval -2,588 to +1,707), and the model without weather -1,543
 (-3,498 to +288). **A 22% lower forecast error does not move battery
 revenue at 2 MWh.** With noisy weather the model falls clearly *below* the naive forecast
 (69,993 EUR/MW/year at 50% noise).
@@ -177,11 +201,11 @@ revenue at 2 MWh.** With noisy weather the model falls clearly *below* the naive
 A plain average of the last 4 weeks, by hour of day, needs no model and no weather. Its error is
 *larger* than yesterday's (31.8 against 30.3 EUR/MWh) but it earns
 +3,735 EUR/MW/year more than yesterday's price (interval +1,894 to +5,685) and
-+3,606 more than the weather model (interval +2,041 to +5,235). A battery needs the *ranking* of
++4,194 more than the weather model (interval +2,514 to +5,981). A battery needs the *ranking* of
 hours within a day, not the price level. Consistent with that, the average puts 67%
 of each day's three most expensive hours in its own top three, against
-62% for the weather model and 62% for yesterday
-(mean within-day rank correlation 0.84, 0.84 and
+64% for the weather model and 62% for yesterday
+(mean within-day rank correlation 0.84, 0.85 and
 0.78). The model removes level error that the schedule does not use.
 This is an explanation consistent with the data, not a proven mechanism.
 
@@ -189,8 +213,8 @@ This is an explanation consistent with the data, not a proven mechanism.
 
 Revenue is lumpy: the best 38 days earn 24% of the
 perfect-foresight total, and the weather model beats yesterday on only
-43% of days, with gains (5,645 EUR) and
-losses (-5,511 EUR) almost cancelling over the period.
+44% of days, with gains (5,607 EUR) and
+losses (-6,088 EUR) almost cancelling over the period.
 
 ### Does battery size change the answer?
 
@@ -200,13 +224,13 @@ Yes. Holding power at 1 MW and varying capacity:
 
 | Duration | Yesterday | 4-week average | Weather model | Perfect | Model minus yesterday |
 |---|---|---|---|---|---|
-| 1 h | 43,599 | 45,066 | 42,439 | 50,969 | -1,161 (-2,483 to +69) |
-| 2 h | 82,167 | 85,901 | 82,295 | 95,165 | +128 (-1,862 to +2,404) |
-| 4 h | 139,333 | 143,845 | 143,333 | 158,155 | +4,000 (+1,635 to +6,414) |
+| 1 h | 43,599 | 45,066 | 42,284 | 50,969 | -1,315 (-2,639 to -80) |
+| 2 h | 82,167 | 85,901 | 81,707 | 95,165 | -460 (-2,573 to +1,703) |
+| 4 h | 139,333 | 143,845 | 143,159 | 158,155 | +3,826 (+1,433 to +6,279) |
 
 The longer the storage, the more hours there are to rank and the more a good forecast is worth. At
 4 h the model is clearly better than yesterday, but the free 4-week average is as good
-as the model (143,845 against 143,333). The 2 MWh case used above is one
+as the model (143,845 against 143,159). The 2 MWh case used above is one
 point on this curve.
 
 ![Day types](analysis/figures/13_day_types.png)
@@ -239,15 +263,15 @@ to 67%. This is a descriptive regression, not a causal estimate.
 
 | Situation | Hours | Mean price | Negative | Above 200 | Model vs yesterday |
 |---|---|---|---|---|---|
-| Sunny weekend midday | 454 | 19 | 50% | 0% | 32% |
-| Sunny weekday midday | 1170 | 62 | 12% | 0% | 23% |
+| Sunny weekend midday | 454 | 19 | 50% | 0% | 31% |
+| Sunny weekday midday | 1170 | 62 | 12% | 0% | 22% |
 | Windy night | 908 | 75 | 2% | 0% | 25% |
-| Calm winter evening | 43 | 165 | 0% | 21% | 1% |
-| Windy winter evening | 293 | 105 | 0% | 0% | -9% |
-| Cold day (below 0 C) | 729 | 105 | 0% | 1% | 13% |
-| Hot day (above 28 C) | 201 | 108 | 8% | 14% | 20% |
-| Public holiday | 240 | 67 | 11% | 2% | 28% |
-| Overcast summer midday | 57 | 62 | 19% | 0% | 39% |
+| Calm winter evening | 43 | 165 | 0% | 21% | 3% |
+| Windy winter evening | 293 | 105 | 0% | 0% | -5% |
+| Cold day (below 0 C) | 729 | 105 | 0% | 1% | 8% |
+| Hot day (above 28 C) | 201 | 108 | 8% | 14% | 18% |
+| Public holiday | 240 | 67 | 11% | 2% | 30% |
+| Overcast summer midday | 57 | 62 | 19% | 0% | 37% |
 | All hours | 9192 | 107 | 6% | 5% | 22% |
 
 A sunny weekend midday is the cheapest situation in the data (mean 19 EUR/MWh,
@@ -259,34 +283,34 @@ are volatile (14% of hours above 200 and 8% negative, only 201 hours); cold days
 
 ![Forecast quality by factor](analysis/figures/14_forecast_by_factor.png)
 
-* **Best:** Wind speed change vs yesterday 3.43 to 18.6 (34% lower error than yesterday); spring
-  (33%); hours with strong or sunny weather; and hours where the weather
+* **Best:** Wind speed change vs yesterday -18.8 to -3.44 (36% lower error than yesterday); spring
+  (32%); hours with strong or sunny weather; and hours where the weather
   *changes* from yesterday: with the largest wind change in either direction the gain is
-  34% and 34%. The model's job is to notice what yesterday does not know.
-* **Worst:** winter (gain 6%, interval -10% to 18%, which includes
+  36% and 35%. The model's job is to notice what yesterday does not know.
+* **Worst:** winter (gain 4%, interval -12% to 16%, which includes
   zero) and days when the weather is the same as yesterday (middle wind-change bin: gain
-  3%). When nothing changes, "same as yesterday" is hard to beat. In windy winter
-  evenings the model is slightly *worse* than yesterday (-9%, 293 hours).
+  2%). When nothing changes, "same as yesterday" is hard to beat. In windy winter
+  evenings the model is slightly *worse* than yesterday (-5%, 293 hours).
 * **Largest absolute errors** are in the morning and evening ramps, in hours with high solar
-  output, in surplus hours (residual load below 13 GW: MAE 28 against
+  output, in surplus hours (residual load below 13 GW: MAE 27 against
   19 in the middle of the range) and the day after an unusual day.
-* **Not clearly better than yesterday (interval includes zero):** Wind speed change vs yesterday -0.989 to 1.08; Yesterday's price volatility 1.16 to 18.3; Season winter.
+* **Not clearly better than yesterday (interval includes zero):** Wind speed change vs yesterday -3.44 to -0.989; Wind speed change vs yesterday -0.989 to 1.08; Yesterday's price volatility 1.16 to 18.3; Public holiday holiday; Season winter.
 * **Weekends and public holidays** are no worse than normal days for the model
-  (weekend 24%, holiday 28% with only 240 hours).
+  (weekend 23%, holiday 30% with only 240 hours).
 
 ### 5.4 How it fails
 
 ![Actual against forecast](analysis/figures/20_actual_vs_forecast.png)
 
-Only 1.5% of hours have an error above 100 EUR/MWh, but the worst 1% of hours
+Only 1.3% of hours have an error above 100 EUR/MWh, but the worst 1% of hours
 cause 7.5% of all error. They fall into two kinds:
 
 1. **Spikes are under-forecast.** On 14 September 2026 at 19:00 local time the price hit
    697 EUR/MWh with 1.9 GW of wind and 56 GW of residual load; the model said
-   298, yesterday's price said 230.
+   307, yesterday's price said 230.
 2. **Extremes are copied into the next day.** The lowest price in the data (-499 EUR/MWh, 1 May 2026, a holiday with a
-   solar surplus) was forecast as -47. The following day the model and the naive
-   forecast both predicted around -456 to -490 again, while the real price was only -87 to -130. A
+   solar surplus) was forecast as -53. The following day the model and the naive
+   forecast both predicted around -445 to -482 again, while the real price was only -87 to -130. A
    model that anchors on yesterday inherits yesterday's outliers.
 
 ### 5.5 Odd-looking results, checked
@@ -316,7 +340,7 @@ behaviours that look odd but are real, and the model weaknesses listed above.
 | Industrial or EV load with flexibility | Run in the cheapest hours instead of flat | Cheapest 4 hours cost 44 vs 100 EUR/MWh flat: 56% saving, about 56 EUR/MWh |
 | Battery operator | Earnings are seasonal and lumpy; a simple average beats the model at 2 MWh | Best month 2026-09: 447 EUR/day, worst 2025-12: 87 (perfect foresight) |
 | Anyone buying power | Price risk sits in a few evening hours with little wind | 65% of the 119 spike hours are in the evening; mean wind 3.2 GW against 15.5 |
-| Forecast users | Trust the forecast most when the weather changes; check it when nothing changes and after an extreme day | Gain 34% (big fall in wind) and 34% (big rise) vs 3% in stable weather |
+| Forecast users | Trust the forecast most when the weather changes; check it when nothing changes and after an extreme day | Gain 36% (big fall in wind) and 35% (big rise) vs 2% in stable weather |
 
 ![Flexible load savings](analysis/figures/18_flexible_load_savings.png)
 
@@ -329,7 +353,7 @@ charges and levies.
 ![Battery earnings by season and weather](analysis/figures/19_battery_by_season_weather.png)
 
 Battery earnings follow the season: 5.1 times higher in the best month than in the worst.
-The weather model helps most on cold, dull days (about +10 EUR per day over yesterday)
+The weather model helps most on cold, dull days (about +9 EUR per day over yesterday)
 and loses on hot days (-13); these day groups are exploratory.
 
 For a non-technical reader: the weather decides the price, solar and wind push it down by roughly
@@ -351,8 +375,10 @@ a plain average of recent prices is a surprisingly strong planning tool.
 
 ## Limitations
 
-* The weather model uses observed weather. Real use needs a numerical weather forecast, which this
-  project does not have (see the noise test for the effect).
+* The weather input is an archived forecast from one provider (Open-Meteo best-match model, issued
+  about a day before, nine-station mean), not the exact forecast available at bidding time; the
+  observed-weather reference shows the sensitivity is small. No carbon price and no gas price at
+  daily resolution (monthly gas only; the model feature test is in the model card).
 * One market, roughly two years of prices, one battery configuration. No intraday, balancing or
   ancillary revenue, no network charges, no capacity degradation over time.
 * The price premium is a regression residual, not a causal estimate; fuel and carbon prices are not

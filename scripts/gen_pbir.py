@@ -51,7 +51,7 @@ def literal(text: str) -> dict:
     return {"expr": {"Literal": {"Value": "'" + text.replace("'", "''") + "'"}}}
 
 
-def visual(name, vtype, x, y, w, h, roles=None, title=None, extra=None) -> dict:
+def visual(name, vtype, x, y, w, h, roles=None, title=None, extra=None, sort=None) -> dict:
     v: dict = {"visualType": vtype}
     if roles:
         v["query"] = {
@@ -60,6 +60,21 @@ def visual(name, vtype, x, y, w, h, roles=None, title=None, extra=None) -> dict:
             }
         }
         v["drillFilterOtherVisuals"] = True
+        if sort:
+            v["query"]["sortDefinition"] = {"sort": [{"field": sort[0], "direction": sort[1]}]}
+    if vtype == "slicer":  # a dropdown that starts with nothing selected (no filter)
+        lit = lambda text: {"expr": {"Literal": {"Value": text}}}  # noqa: E731
+        v["objects"] = {
+            "data": [{"properties": {"mode": lit("'Dropdown'")}}],
+            "selection": [
+                {
+                    "properties": {
+                        "singleSelect": lit("false"),
+                        "selectAllCheckboxEnabled": lit("true"),
+                    }
+                }
+            ],
+        }
     if extra:
         v.update(extra)
     out = {
@@ -137,7 +152,7 @@ def pages() -> list[tuple[str, str, list[dict]]]:
             [
                 (
                     "Walk-forward test over 13 months and 9,192 out-of-sample hours; 95% day-block bootstrap intervals. "
-                    "The weather model uses observed weather, so it is an upper bound.",
+                    "The weather input is the forecast issued the day before.",
                     "11pt",
                 )
             ],
@@ -183,6 +198,7 @@ def pages() -> list[tuple[str, str, list[dict]]]:
             430,
             {"Category": [col(BAT, "label")], "Y": [agg(BAT, "eur_per_mw_year", SUM)]},
             "Battery revenue by forecast used (EUR/MW/year)",
+            sort=(agg(BAT, "eur_per_mw_year", SUM), "Descending"),
         ),
         visual(
             "noise_cols",
@@ -192,7 +208,8 @@ def pages() -> list[tuple[str, str, list[dict]]]:
             596,
             430,
             {"Category": [col(NOI, "label")], "Y": [agg(NOI, "gain", SUM)]},
-            "Error reduction shrinks as weather input gets noisy",
+            "Error reduction under a weather-noise stress test",
+            sort=(agg(NOI, "gain", SUM), "Descending"),
         ),
     ]
     market = [
@@ -355,10 +372,10 @@ def pages() -> list[tuple[str, str, list[dict]]]:
             396,
             260,
             [
-                ("Read this first", "12pt"),
+                ("About the weather input", "12pt"),
                 (
-                    "The weather model uses observed weather as a stand-in for a forecast, so its error is an "
-                    "optimistic upper bound. Its 80% interval covers about 70% of hours.",
+                    "The weather input is the forecast issued the day before (Open-Meteo archive). "
+                    "The 80% interval covers about 69% of hours as trained.",
                     "11pt",
                 ),
             ],

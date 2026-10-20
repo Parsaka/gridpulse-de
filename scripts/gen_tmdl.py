@@ -1,10 +1,29 @@
 """Generate the Power BI semantic model (TMDL) from a compact spec.
 
-Run from the repo root: python scripts/gen_tmdl.py
+Run from the repo root:
+    python scripts/gen_tmdl.py                     # CSV source (default): no credentials needed;
+                                                   # create the files with `gridpulse export-bi`
+    python scripts/gen_tmdl.py --source postgres   # import straight from the PostgreSQL warehouse
 Output is committed, so the model is reviewable in Git; this script just keeps it consistent.
 """
 
+import sys
 from pathlib import Path
+
+SOURCE = (
+    "postgres"
+    if "--source" in sys.argv and sys.argv[sys.argv.index("--source") + 1] == "postgres"
+    else "csv"
+)
+# Folder holding the CSV files; edit the CsvFolder parameter in Power BI if the repo lives elsewhere.
+CSV_FOLDER = r"C:\Users\Parsa\Documents\gridpulse-de\data\bi" + "\\"
+M_TYPES = {
+    "dateTime": "type datetime",
+    "double": "type number",
+    "int64": "Int64.Type",
+    "string": "type text",
+    "boolean": "type logical",
+}
 
 ROOT = Path("powerbi/GridPulse.SemanticModel")
 DEF = ROOT / "definition"
@@ -12,8 +31,25 @@ T = "\t"
 F2, F0, PCT = "#,0.00", "#,0", "0.0%"
 
 
-def m_source(schema: str, table: str, dt_cols: list[str]) -> str:
+def m_csv(table: str, columns) -> str:
+    """Power Query: read the exported CSV and set the column types."""
+    types = ", ".join(f'{{"{c}", {M_TYPES[d]}}}' for c, d, _ in columns)
+    lines = [
+        f"{T * 4}let",
+        f'{T * 5}Raw = Csv.Document(File.Contents(CsvFolder & "{table}.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),',
+        f"{T * 5}Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),",
+        f'{T * 5}Typed = Table.TransformColumnTypes(Headers, {{{types}}}, "en-US")',
+        f"{T * 4}in",
+        f"{T * 5}Typed",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def m_source(schema: str, table: str, dt_cols: list[str], columns=()) -> str:
     """Power Query: read a gold table; timestamptz -> UTC datetime without zone."""
+    if SOURCE == "csv":
+        return m_csv(table, columns)
     lines = [
         f"{T * 4}let",
         f"{T * 5}Source = PostgreSQL.Database(PgServer, PgDatabase),",
@@ -41,10 +77,10 @@ def table(name, columns, schema="gold", measures=(), dt_cols=()):
             out.append(f"{T * 2}formatString: {fmt}\n")
         out.append(f"{T * 2}summarizeBy: none\n{T * 2}sourceColumn: {col}\n\n")
     for mname, expr, fmt, desc in measures:
-        out.append(f"{T}measure '{mname}' = {expr}\n")
-        out.append(f"{T * 2}formatString: {fmt}\n{T * 2}description: {desc}\n\n")
+        out.append(f"{T}/// {desc}\n{T}measure '{mname}' = {expr}\n")
+        out.append(f"{T * 2}formatString: {fmt}\n\n")
     out.append(f"{T}partition {name} = m\n{T * 2}mode: import\n{T * 2}source =\n")
-    out.append(m_source(schema, name, list(dt_cols)))
+    out.append(m_source(schema, name, list(dt_cols), columns))
     return "".join(out)
 
 
@@ -350,20 +386,28 @@ write(
         for a, ac, b, bc in RELS
     ),
 )
-write(
-    "expressions.tmdl",
-    'expression PgServer = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]\n'
-    f"{T}lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0001\n\n"
-    'expression PgDatabase = "gridpulse" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]\n'
-    f"{T}lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0002\n",
-)
+if SOURCE == "csv":
+    EXPRESSIONS = (
+        f'expression CsvFolder = "{CSV_FOLDER}" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]\n'
+        f"{T}lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0003\n"
+    )
+    REFS = "\nref expression CsvFolder\n"
+else:
+    EXPRESSIONS = (
+        'expression PgServer = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]\n'
+        f"{T}lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0001\n\n"
+        'expression PgDatabase = "gridpulse" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]\n'
+        f"{T}lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0002\n"
+    )
+    REFS = "\nref expression PgServer\nref expression PgDatabase\n"
+write("expressions.tmdl", EXPRESSIONS)
 tables = [MKT, "dim_datetime", "dim_location", WX, BT, BAT, NOI, MON]
 write(
     "model.tmdl",
     "model Model\n"
     f"{T}culture: en-US\n{T}defaultPowerBIDataSourceVersion: powerBI_V3\n\n"
     + "".join(f"ref table {n}\n" for n in tables)
-    + "\nref expression PgServer\nref expression PgDatabase\n",
+    + REFS,
 )
 write("database.tmdl", f"database GridPulse\n{T}compatibilityLevel: 1601\n")
 (ROOT / "definition.pbism").write_text(

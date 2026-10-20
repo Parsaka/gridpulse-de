@@ -43,6 +43,7 @@ def walk_forward(
     quantiles: tuple = QUANTILES,
     noise_levels: tuple = NOISE_LEVELS,
     params: dict | None = None,
+    extra_features: list[str] | None = None,
     progress=None,
 ) -> tuple[pd.DataFrame, list[Fold]]:
     """Return one row per out-of-sample hour with every model's prediction, plus fold metadata."""
@@ -50,8 +51,11 @@ def walk_forward(
 
     feat = build_features(df).dropna(subset=[TARGET, "price_lag_168", ANCHOR])
     base = {**LGBM_PARAMS, **(params or {})}
-    cal, wx = FEATURE_SETS["calendar_lags"], FEATURE_SETS["with_weather"]
-    weather_cols = [c for c in wx if c in WEATHER]
+    cal, wx = (
+        FEATURE_SETS["calendar_lags"],
+        FEATURE_SETS["with_weather"] + list(extra_features or []),
+    )
+    weather_cols = [c for c in wx if c in WEATHER]  # noise applies to weather only
     rng = np.random.default_rng(42)
     rows, folds = [], []
     start = pd.Timestamp(first_test_month, tz="UTC")

@@ -40,7 +40,8 @@ def _round(obj, nd=4):
 
 
 def noise_sensitivity(wf: pd.DataFrame, n_boot: int = 2000) -> list[dict]:
-    cols = [("0", "lgbm_weather")] + [
+    zero = "lgbm_weather_obs" if "lgbm_weather_obs" in wf else "lgbm_weather"
+    cols = [("0", zero)] + [
         (c.removeprefix("lgbm_weather_noise"), c)
         for c in wf.columns
         if c.startswith("lgbm_weather_noise")
@@ -69,7 +70,10 @@ def noise_sensitivity(wf: pd.DataFrame, n_boot: int = 2000) -> list[dict]:
     return out
 
 
-def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
+def compute(
+    df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000, fuel: pd.DataFrame | None = None
+) -> dict:
+    wf = stats.conformalize(wf)
     wf = stats.with_regime(extras.add_profile_forecast(wf, df))
     if wf["profile_28d"].isna().any():
         raise ValueError("profile forecast needs 28 days of history before the first test day")
@@ -89,6 +93,9 @@ def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
     strategies = {"perfect": "actual", "naive_24h": "naive_24h", "lgbm_calendar": "lgbm_calendar"}
     strategies["profile_28d"] = "profile_28d"
     strategies["lgbm_weather"] = "lgbm_weather"
+    for extra_col in ("lgbm_weather_obs", "lgbm_weather_fuel"):
+        if extra_col in wf:
+            strategies[extra_col] = extra_col
     for c in wf.columns:
         if c.startswith("lgbm_weather_noise"):
             strategies[c] = c
@@ -123,6 +130,8 @@ def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
         "battery_by_factor": factors.battery_by_factor(daily, ff),
         "anomalies": factors.anomalies(ff, df),
     }
+    if fuel is not None:
+        factor_results["fuel"] = factors.fuel_effect(df, fuel)
 
     res = {
         "meta": {
@@ -154,6 +163,8 @@ def compute(df: pd.DataFrame, wf: pd.DataFrame, n_boot: int = 2000) -> dict:
             "skill": stats.skill(wf, n_boot=n_boot),
             "monthly": stats.monthly_skill(wf),
             "interval": stats.interval_report(wf),
+            "interval_calibrated": stats.interval_report(wf, "q10_cal", "q90_cal"),
+            "interval_raw_same_days": stats.interval_report(wf.dropna(subset=["q10_cal"])),
             "by_hour": stats.mae_table(wf, "hour_local"),
             "by_regime": stats.mae_table(wf, "regime"),
             "by_wind": stats.wind_terciles(wf, df),

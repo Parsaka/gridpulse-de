@@ -37,7 +37,12 @@ def render(res: dict) -> str:
     best_regime = max(fc["by_regime"], key=lambda r: 1 - r["mae_lgbm_weather"] / r["mae_naive_24h"])
     spike = next(r for r in fc["by_regime"] if r["regime"].startswith("spike"))
     mp = price["monthly_premium"]
+    fa = res["factors"]
     prof = sk["profile_28d"]
+    obs = sk.get("lgbm_weather_obs", w)
+    fu_m = sk.get("lgbm_weather_fuel", w)
+    fuel = fa["fuel"] if "fuel" in res["factors"] else None
+    cal_i, raw_i = fc["interval_calibrated"], fc["interval_raw_same_days"]
     pn = bat["differences_per_year"]["profile_28d_minus_naive_24h"]
     pw = bat["differences_per_year"]["profile_28d_minus_lgbm_weather"]
     rk = bat["ranking"]
@@ -45,7 +50,21 @@ def render(res: dict) -> str:
     big = max(sizes, key=lambda r: r["duration_h"])
     conc = bat["concentration"]
     surplus = price["curve"][0]
-    fa = res["factors"]
+    if fuel:
+        fuel_text = (
+            f"**Gas price explains it.** The monthly European gas price (World Bank Pink Sheet, CC BY 4.0) went "
+            f"from {fuel['gas_avg_period_a']:.1f} USD/mmbtu (Aug to Oct 2025) to {fuel['gas_avg_period_b']:.1f} (Aug to Oct 2026). "
+            f"Across {fuel['months']} months, the load-adjusted price level moves "
+            f"{fuel['slope_eur_per_usd_mmbtu']:.1f} EUR/MWh per USD/mmbtu (interval {fuel['slope_ci'][0]:.1f} to {fuel['slope_ci'][1]:.1f}, "
+            f"R2 {fuel['r2']:.2f}). A gas plant at about 50% efficiency passes through roughly "
+            f"{fuel['physical_slope_usd_per_mmbtu_gas_at_50pct_efficiency']:.1f} USD per MWh for each USD/mmbtu, so the size is plausible. "
+            f"Applied to this change it implies about {fuel['implied_premium']:.0f} EUR/MWh against the measured "
+            f"{pa['premium_eur_mwh']:.0f}. Caveat: {fuel['months']} monthly points and one gas series, so this is strong "
+            f"association, not proof, and carbon prices are not included.\n\n"
+            f"![Gas price and the price level]({FIG}/21_gas_and_price_level.png)"
+        )
+    else:
+        fuel_text = "This pattern points to the fuel and carbon price level, which was not in the data for this run."
     ebf, we, an = fa["error_by_factor"], fa["weather_effects"], fa["anomalies"]
     scn = {x["scenario"]: x for x in fa["scenarios"]}
     cr, cs, bf = fa["capture_rates"], fa["consumer_shift"], fa["battery_by_factor"]
@@ -97,10 +116,10 @@ Four sub-questions follow from it, each answered below with one method:
 | Statistically better? | **Yes.** Mean absolute error {w["mae"]:.1f} vs {base["mae"]:.1f} EUR/MWh, {_pct(w["skill_vs_baseline"])} lower | 95% interval {_pct(w["skill_ci"][0])} to {_pct(w["skill_ci"][1])}; better in {n_better} of {n_months} months |
 | Economically better? | **No measurable difference.** Battery revenue {d["mean"]:+,.0f} EUR/MW/year vs the naive forecast | interval {_ci(d["ci"])}, spans zero |
 | A free alternative? | **Yes, and it wins.** A plain average of the last 4 weeks by hour of day earns {pn["mean"]:+,.0f} EUR/MW/year more than yesterday's price and {pw["mean"]:+,.0f} more than the model | intervals {_ci(pn["ci"])} and {_ci(pw["ci"])}; its MAE is *worse* ({prof["mae"]:.1f}) |
-| Does battery size change it? | **Yes.** At {sizes[0]["duration_h"]:.0f} h it is no better ({sizes[0]["model_minus_naive"]:+,.0f}, interval {_ci(sizes[0]["model_minus_naive_ci"])}), at {big["duration_h"]:.0f} h it wins ({big["model_minus_naive"]:+,.0f}, interval {_ci(big["model_minus_naive_ci"])}) | Section 4 |
+| Does battery size change it? | **Yes.** At {sizes[0]["duration_h"]:.0f} h it is {"worse" if sizes[0]["model_minus_naive_ci"][1] < 0 else "no better"} ({sizes[0]["model_minus_naive"]:+,.0f}, interval {_ci(sizes[0]["model_minus_naive_ci"])}), at {big["duration_h"]:.0f} h it wins ({big["model_minus_naive"]:+,.0f}, interval {_ci(big["model_minus_naive_ci"])}) | Section 4 |
 | Why not at 2 h? | Dispatch needs the ranking of hours, and the model does not rank the expensive hours better than yesterday ({_pct(rk["lgbm_weather"]["top3_hit_rate"])} vs {_pct(rk["naive_24h"]["top3_hit_rate"])} top-3 hit rate); yesterday already earns {_pct(st["naive_24h"]["capture_of_perfect"])} of the ceiling | Section 4 |
-| Is the model well calibrated? | **No.** The nominal 80% interval covers {_pct(iv["coverage"])} | Section 3 |
-| Caveat that matters most | The weather model is fed *observed* weather, i.e. a perfect weather forecast. It is an upper bound | Section 3, noise test |
+| Is the model well calibrated? | **Not out of the box** (nominal 80% interval covers {_pct(iv["coverage"])}); after rolling conformal calibration it covers {_pct(cal_i["coverage"])} | Section 3 |
+| Is the weather input realistic? | **Yes.** The model gets the weather forecast issued the day before, not observed weather. Observed weather would give {_pct(obs["skill_vs_baseline"])}, so the difference is negligible | Section 3 |
 
 The honest conclusion: the accuracy gain is real, but for a 2 MWh battery it buys nothing, and a free
 4-week average beats both yesterday and the model. The forecast only starts to pay for longer storage,
@@ -126,8 +145,7 @@ The gap is not uniform. In hours with strongly negative residual load (the lowes
 below {surplus["hi"]:.0f} GW) prices sit near zero in both years (median {surplus["median_a"]:.2f} in 2025 and
 {surplus["median_b"]:.2f} in 2026): the premium lives in the hours where fossil plants set the price.
 
-This pattern points to the fuel and carbon price level, which the platform does not observe.
-**This is a statement about what is *not* explained by load and renewables, not a measured cause.**
+{fuel_text}
 
 The slope is {pa["eur_per_gw_residual"]:.1f} EUR/MWh per GW of residual load
 (interval {pa["eur_per_gw_ci"][0]:.1f} to {pa["eur_per_gw_ci"][1]:.1f}): each additional GW the
@@ -175,16 +193,30 @@ change from the same hour yesterday. Result tables are over {fc["skill"]["n_hour
 | **Same hour yesterday (baseline)** | **{base["mae"]:.1f}** | |
 | 4-week average by hour (no model) | {prof["mae"]:.1f} | {_pct(prof["skill_vs_baseline"], 1)} ({_pct(prof["skill_ci"][0], 1)} to {_pct(prof["skill_ci"][1], 1)}) |
 | Model without weather | {cal["mae"]:.1f} | {_pct(cal["skill_vs_baseline"], 1)} ({_pct(cal["skill_ci"][0], 1)} to {_pct(cal["skill_ci"][1], 1)}) |
-| Model with observed weather | **{w["mae"]:.1f}** | **{_pct(w["skill_vs_baseline"])}** ({_pct(w["skill_ci"][0])} to {_pct(w["skill_ci"][1])}) |
+| Model with observed weather (reference) | {obs["mae"]:.1f} | {_pct(obs["skill_vs_baseline"])} ({_pct(obs["skill_ci"][0])} to {_pct(obs["skill_ci"][1])}) |
+| Model with day-before weather forecast | **{w["mae"]:.1f}** | **{_pct(w["skill_vs_baseline"])}** ({_pct(w["skill_ci"][0])} to {_pct(w["skill_ci"][1])}) |
+| + last month's gas and coal price | {fu_m["mae"]:.1f} | {_pct(fu_m["skill_vs_baseline"])} ({_pct(fu_m["skill_ci"][0])} to {_pct(fu_m["skill_ci"][1])}) |
 
 Weather is what makes the model work: without it the gain is {_pct(cal["skill_vs_baseline"], 1)} and
 the interval includes zero. With it, {n_better} of {n_months} months are better than the baseline
 ({n_sig} of them with an interval that excludes zero); the remaining months are not distinguishable
 or slightly worse, so the gain is not uniform.
 
-**The weather in this model is observed, not forecast.** To see how much that flatters the result,
-Gaussian noise (a share of each weather variable's standard deviation) was added to the weather
-inputs at prediction time. This is illustrative, not a calibrated forecast-error model:
+**Fuel prices add a little.** Giving the model the previous month's European gas and coal prices
+(the latest complete month, so nothing from the future) lowers the error from {w["mae"]:.1f} to
+{fu_m["mae"]:.1f} EUR/MWh (gain {_pct(fu_m["skill_vs_baseline"])}, interval {_pct(fu_m["skill_ci"][0])} to {_pct(fu_m["skill_ci"][1])}; error difference
+{fu_m["mae_diff_ci"][0]:.1f} to {fu_m["mae_diff_ci"][1]:.1f} EUR/MWh against yesterday). It is not the headline model because it needs a
+manually updated monthly fuel file; battery revenue does not change either
+({bat["differences_per_year"]["lgbm_weather_fuel_minus_naive_24h"]["mean"]:+,.0f} EUR/MW/year, interval {_ci(bat["differences_per_year"]["lgbm_weather_fuel_minus_naive_24h"]["ci"])}).
+
+**The weather input is a real forecast.** The headline model uses the weather forecast that was
+issued the day before each hour (Open-Meteo Previous Runs archive, averaged over the nine
+stations). Training and testing both use it. A reference model with *observed* weather, the
+optimistic stand-in used earlier in this project, scores {obs["mae"]:.1f} ({_pct(obs["skill_vs_baseline"])}) against
+{w["mae"]:.1f} ({_pct(w["skill_vs_baseline"])}) for the forecast version: a day-ahead weather forecast loses almost
+nothing here. As a stress test, Gaussian noise (a share of each weather variable's standard
+deviation) was added to the observed-weather model's inputs at prediction time. It shows how
+much the result would suffer if the forecast were much worse than it is, not what happens today:
 
 ![Noise sensitivity]({FIG}/06_noise_sensitivity.png)
 
@@ -193,7 +225,7 @@ inputs at prediction time. This is illustrative, not a calibrated forecast-error
 {chr(10).join(f"| {k}% of std | {v['mae']:.1f} | {_pct(v['gain'])} ({_pct(v['gain_ci'][0])} to {_pct(v['gain_ci'][1])}) |" for k, v in noise.items())}
 
 At 100% noise the gain shrinks to {_pct(noise[100]["gain"], 1)}, no better than having no weather
-at all. The real-world gain therefore lies between those numbers and the headline.
+at all; the real forecast is far better than that stress level.
 
 ![Error structure]({FIG}/07_error_structure.png)
 
@@ -213,6 +245,13 @@ covers {_pct(iv["coverage"])}. The worst regime is {worst["regime"]} ({_pct(wors
 spikes is partly by construction, but the overall 70% is not.
 
 ![Interval coverage]({FIG}/10_interval_coverage.png)
+
+**Calibration fixes most of it.** Widening the interval by the empirical quantile of the last 60
+days of misses (rolling conformalised quantile regression; each day uses only earlier days, after
+a 14-day warm-up) lifts coverage from {_pct(raw_i["coverage"])} to {_pct(cal_i["coverage"])} on the same days, at the cost
+of a wider interval (mean width {raw_i["mean_width"]:.0f} to {cal_i["mean_width"]:.0f} EUR/MWh). Coverage still dips when
+the market shifts abruptly (the worst month is {min(cal_i["by_month"], key=cal_i["by_month"].get)} at
+{_pct(min(cal_i["by_month"].values()))}): rolling calibration follows regimes with a lag.
 
 ## 4. Does it earn money?
 
@@ -401,8 +440,10 @@ a plain average of recent prices is a surprisingly strong planning tool.
 
 ## Limitations
 
-* The weather model uses observed weather. Real use needs a numerical weather forecast, which this
-  project does not have (see the noise test for the effect).
+* The weather input is an archived forecast from one provider (Open-Meteo best-match model, issued
+  about a day before, nine-station mean), not the exact forecast available at bidding time; the
+  observed-weather reference shows the sensitivity is small. No carbon price and no gas price at
+  daily resolution (monthly gas only; the model feature test is in the model card).
 * One market, roughly two years of prices, one battery configuration. No intraday, balancing or
   ancillary revenue, no network charges, no capacity degradation over time.
 * The price premium is a regression residual, not a causal estimate; fuel and carbon prices are not
@@ -443,7 +484,9 @@ LABELS = {
     "naive_24h": "same hour yesterday",
     "profile_28d": "4-week average by hour",
     "lgbm_calendar": "model without weather",
-    "lgbm_weather": "model with observed weather",
+    "lgbm_weather": "model with weather forecast",
+    "lgbm_weather_obs": "model with observed weather",
+    "lgbm_weather_fuel": "model + gas and coal price",
     "lgbm_weather_noise25": "model, 25% weather noise",
     "lgbm_weather_noise50": "model, 50% weather noise",
     "lgbm_weather_noise100": "model, 100% weather noise",

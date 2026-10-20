@@ -58,20 +58,20 @@ table fct_weather_hourly
 		summarizeBy: none
 		sourceColumn: pressure_hpa
 
+	/// Mean temperature in degrees Celsius over the selected stations and hours.
 	measure 'Avg Temperature C' = AVERAGE(fct_weather_hourly[temperature_c])
 		formatString: 0.0
-		description: Mean temperature in degrees Celsius over the selected stations and hours.
 
+	/// Mean wind speed in km/h over the selected stations and hours.
 	measure 'Avg Wind Speed kmh' = AVERAGE(fct_weather_hourly[wind_speed_kmh])
 		formatString: 0.0
-		description: Mean wind speed in km/h over the selected stations and hours.
 
 	partition fct_weather_hourly = m
 		mode: import
 		source =
 				let
-					Source = PostgreSQL.Database(PgServer, PgDatabase),
-					Data = Source{[Schema="gold", Item="fct_weather_hourly"]}[Data],
-					Utc = Table.TransformColumns(Data, {{"ts_utc", each DateTimeZone.RemoveZone(DateTimeZone.SwitchZone(_, 0)), type datetime}})
+					Raw = Csv.Document(File.Contents(CsvFolder & "fct_weather_hourly.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Raw, [PromoteAllScalars=true]),
+					Typed = Table.TransformColumnTypes(Headers, {{"location", type text}, {"ts_utc", type datetime}, {"temperature_c", type number}, {"wind_speed_kmh", type number}, {"wind_direction_deg", type number}, {"cloud_cover_pct", type number}, {"sunshine_min", type number}, {"solar_kwh_m2", type number}, {"precipitation_mm", type number}, {"pressure_hpa", type number}}, "en-US")
 				in
-					Utc
+					Typed

@@ -23,21 +23,31 @@ def test_model_references_every_table_file():
 
 @pytest.mark.parametrize("path", TABLES, ids=lambda p: p.stem)
 def test_every_measure_has_format_and_description(path):
-    text = path.read_text(encoding="utf-8")
-    blocks = re.split(r"^\t(?=measure )", text, flags=re.M)[1:]
-    for block in blocks:
-        head = block.splitlines()[0]
-        body = re.split(r"\n\t(?=\S)", block, maxsplit=1)[0]  # up to the next member
-        assert "formatString:" in body, f"missing formatString: {head}"
-        assert "description:" in body, f"missing description: {head}"
+    """TMDL has no `description:` property for measures; the description is a `///` comment
+    directly above (Power BI's own parser rejects the property form)."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        if line.startswith("	measure "):
+            assert i > 0 and lines[i - 1].startswith("	/// "), f"missing /// description: {line}"
+            body = []
+            for nxt in lines[i + 1 :]:
+                if nxt.startswith("		"):
+                    body.append(nxt)
+                else:
+                    break
+            assert any(b.strip().startswith("formatString:") for b in body), f"no format: {line}"
+    assert "description:" not in path.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("path", TABLES, ids=lambda p: p.stem)
-def test_table_has_postgres_import_partition(path):
+def test_table_has_import_partition_from_csv_or_postgres(path):
     text = path.read_text(encoding="utf-8")
-    assert "PostgreSQL.Database(PgServer, PgDatabase)" in text
-    assert f'Item="{path.stem}"' in text
     assert "mode: import" in text
+    if "PostgreSQL.Database(PgServer, PgDatabase)" in text:
+        assert f'Item="{path.stem}"' in text
+    else:  # CSV mode (default): one file per table, typed columns
+        assert f'CsvFolder & "{path.stem}.csv"' in text
+        assert "Table.TransformColumnTypes" in text
 
 
 def test_relationships_point_at_existing_columns():

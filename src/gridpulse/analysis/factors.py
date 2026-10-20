@@ -433,3 +433,60 @@ def anomalies(ff: pd.DataFrame, df: pd.DataFrame) -> dict:
             f["err"].nlargest(max(1, int(0.01 * len(f)))).sum() / f["err"].sum()
         ),
     }
+
+
+def fuel_effect(
+    df: pd.DataFrame,
+    fuel: pd.DataFrame,
+    period_a=("2025-08", "2025-10"),
+    period_b=("2026-08", "2026-10"),
+) -> dict:
+    """How much of the month-to-month price level does the gas price explain?
+
+    Step 1: month fixed effects from price ~ hour + residual load + month (so load and renewables
+    are held fixed). Step 2: regress those month effects on the monthly European gas price."""
+    d = df.dropna(subset=["residual_gw", "price_eur_mwh"]).copy()
+    d = d[d["month"].isin(fuel["month"])]
+    hours = pd.get_dummies(d["hour_local"], drop_first=True).to_numpy(float)
+    months = pd.get_dummies(d["month"], drop_first=False)
+    month_names = list(months.columns)
+    X = np.hstack([hours, d[["residual_gw"]].to_numpy(float), months.to_numpy(float)])
+    beta, *_ = np.linalg.lstsq(X, d["price_eur_mwh"].to_numpy(float), rcond=None)
+    fe = pd.Series(beta[-len(month_names) :], index=month_names, name="level")
+    t = pd.DataFrame({"level": fe}).join(fuel.set_index("month"))
+    t = t.dropna()
+    gas = t["gas_europe_usd_mmbtu"].to_numpy()
+    y = t["level"].to_numpy()
+    slope, icpt = np.polyfit(gas, y, 1)
+    pred = icpt + slope * gas
+    r2 = 1 - ((y - pred) ** 2).sum() / ((y - y.mean()) ** 2).sum()
+    rng = np.random.default_rng(0)
+    boots = []
+    for _ in range(2000):
+        i = rng.integers(0, len(t), len(t))
+        if np.ptp(gas[i]) > 0:
+            boots.append(np.polyfit(gas[i], y[i], 1)[0])
+    a = t.loc[period_a[0] : period_a[1], "gas_europe_usd_mmbtu"].mean()
+    b = t.loc[period_b[0] : period_b[1], "gas_europe_usd_mmbtu"].mean()
+    # a gas plant with ~50% efficiency burns ~2 MWh_th per MWh_el; 1 mmbtu = 0.293 MWh_th
+    physical = 2 * 3.412
+    return {
+        "months": int(len(t)),
+        "slope_eur_per_usd_mmbtu": float(slope),
+        "slope_ci": [float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))],
+        "r2": float(r2),
+        "physical_slope_usd_per_mmbtu_gas_at_50pct_efficiency": float(physical),
+        "gas_avg_period_a": float(a),
+        "gas_avg_period_b": float(b),
+        "gas_change": float(b - a),
+        "implied_premium": float(slope * (b - a)),
+        "series": [
+            {
+                "month": m,
+                "level": float(r.level),
+                "gas": float(r.gas_europe_usd_mmbtu),
+                "coal": float(r.coal_australia_usd_t),
+            }
+            for m, r in t.iterrows()
+        ],
+    }

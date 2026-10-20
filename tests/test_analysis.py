@@ -304,3 +304,36 @@ def test_committed_business_page_matches_results():
     root = Path(__file__).resolve().parents[1] / "docs"
     res = json.loads((root / "analysis" / "results.json").read_text(encoding="utf-8"))
     assert render_business(res) == (root / "for-business.md").read_text(encoding="utf-8")
+
+
+def test_conformalize_restores_nominal_coverage_without_peeking():
+    rng = np.random.default_rng(5)
+    n_days = 120
+    ts = pd.date_range("2026-01-01", periods=n_days * 24, freq="h", tz="UTC")
+    actual = 100 + rng.normal(0, 30, len(ts))
+    pred = actual * 0 + 100
+    wf = pd.DataFrame({"ts_utc": ts, "actual": actual, "q10": pred - 10, "q90": pred + 10})
+    out = stats.conformalize(wf, window_days=60, min_days=14, level=0.8)
+    ok = out.dropna(subset=["q10_cal"])
+    cov = ((ok["actual"] >= ok["q10_cal"]) & (ok["actual"] <= ok["q90_cal"])).mean()
+    raw = ((wf["actual"] >= wf["q10"]) & (wf["actual"] <= wf["q90"])).mean()
+    assert raw < 0.4 < 0.7 < cov < 0.9  # too narrow before, near 80% after
+    first_days = out[out["ts_utc"] < ts[0] + pd.Timedelta(days=13)]
+    assert first_days["q10_cal"].isna().all()  # no calibration before the warm-up
+
+
+def test_fuel_effect_recovers_a_known_gas_pass_through():
+    from gridpulse.analysis.factors import fuel_effect
+
+    df = _market_with_weather(days=300)
+    month = pd.to_datetime(df["ts_utc"]).dt.tz_convert("Europe/Berlin").dt.strftime("%Y-%m")
+    months = sorted(month.unique())
+    gas = pd.Series(np.linspace(8, 20, len(months)), index=months)
+    df["price_eur_mwh"] = df["price_eur_mwh"] + 6.0 * month.map(gas).to_numpy()
+    df["residual_gw"] = df["residual_gw"].fillna(0)
+    fuel = pd.DataFrame(
+        {"month": months, "gas_europe_usd_mmbtu": gas.to_numpy(), "coal_australia_usd_t": 100.0}
+    )
+    res = fuel_effect(df, fuel, period_a=(months[1], months[2]), period_b=(months[-3], months[-2]))
+    assert res["slope_eur_per_usd_mmbtu"] == pytest.approx(6.0, abs=0.6)
+    assert res["r2"] > 0.9
