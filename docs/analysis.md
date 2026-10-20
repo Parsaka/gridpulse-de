@@ -214,6 +214,128 @@ point on this curve.
 By kind of day (exploratory, six overlapping groups, no correction for multiple comparisons) there
 is no group where the model's advantage over yesterday is clear at 2 MWh.
 
+## 5. What drives prices, and when the forecast wins or loses
+
+### 5.1 The weather effect on the price
+
+![Weather effects](analysis/figures/15_weather_effects.png)
+
+Holding hour of day, month and weekend fixed, **one more GW of wind lowers the day-ahead price by
+3.0 EUR/MWh** (interval -3.2 to -2.8), one more GW of solar by
+3.3 (-3.5 to -3.1), and one more GW of demand raises it by
+3.8 (3.4 to 4.2). The wind and solar effects are almost identical in the two
+12-month periods; the demand effect weakened in the second. Temperature adds little once
+demand is known (+1.0 EUR/MWh per degree, and about zero in the first year):
+it matters through heating and cooling demand, not directly.
+
+Wind and solar generation are the biggest single driver: hour, month and weekend explain
+29% of the variation in price, adding demand brings it to
+35%, adding wind and solar to 66%, and temperature
+to 67%. This is a descriptive regression, not a causal estimate.
+
+### 5.2 Weather situations
+
+![Weather scenarios](analysis/figures/16_weather_scenarios.png)
+
+| Situation | Hours | Mean price | Negative | Above 200 | Model vs yesterday |
+|---|---|---|---|---|---|
+| Sunny weekend midday | 454 | 19 | 50% | 0% | 32% |
+| Sunny weekday midday | 1170 | 62 | 12% | 0% | 23% |
+| Windy night | 908 | 75 | 2% | 0% | 25% |
+| Calm winter evening | 43 | 165 | 0% | 21% | 1% |
+| Windy winter evening | 293 | 105 | 0% | 0% | -9% |
+| Cold day (below 0 C) | 729 | 105 | 0% | 1% | 13% |
+| Hot day (above 28 C) | 201 | 108 | 8% | 14% | 20% |
+| Public holiday | 240 | 67 | 11% | 2% | 28% |
+| Overcast summer midday | 57 | 62 | 19% | 0% | 39% |
+| All hours | 9192 | 107 | 6% | 5% | 22% |
+
+A sunny weekend midday is the cheapest situation in the data (mean 19 EUR/MWh,
+50% of hours negative); a calm winter evening is the most expensive
+(mean 165, 21% of hours above 200). Hot days
+are volatile (14% of hours above 200 and 8% negative, only 201 hours); cold days are stable and predictable.
+
+### 5.3 When the model works better and worse
+
+![Forecast quality by factor](analysis/figures/14_forecast_by_factor.png)
+
+* **Best:** Wind speed change vs yesterday 3.43 to 18.6 (34% lower error than yesterday); spring
+  (33%); hours with strong or sunny weather; and hours where the weather
+  *changes* from yesterday: with the largest wind change in either direction the gain is
+  34% and 34%. The model's job is to notice what yesterday does not know.
+* **Worst:** winter (gain 6%, interval -10% to 18%, which includes
+  zero) and days when the weather is the same as yesterday (middle wind-change bin: gain
+  3%). When nothing changes, "same as yesterday" is hard to beat. In windy winter
+  evenings the model is slightly *worse* than yesterday (-9%, 293 hours).
+* **Largest absolute errors** are in the morning and evening ramps, in hours with high solar
+  output, in surplus hours (residual load below 13 GW: MAE 28 against
+  19 in the middle of the range) and the day after an unusual day.
+* **Not clearly better than yesterday (interval includes zero):** Wind speed change vs yesterday -0.989 to 1.08; Yesterday's price volatility 1.16 to 18.3; Season winter.
+* **Weekends and public holidays** are no worse than normal days for the model
+  (weekend 24%, holiday 28% with only 240 hours).
+
+### 5.4 How it fails
+
+![Actual against forecast](analysis/figures/20_actual_vs_forecast.png)
+
+Only 1.5% of hours have an error above 100 EUR/MWh, but the worst 1% of hours
+cause 7.5% of all error. They fall into two kinds:
+
+1. **Spikes are under-forecast.** On 14 September 2026 at 19:00 local time the price hit
+   697 EUR/MWh with 1.9 GW of wind and 56 GW of residual load; the model said
+   298, yesterday's price said 230.
+2. **Extremes are copied into the next day.** The lowest price in the data (-499 EUR/MWh, 1 May 2026, a holiday with a
+   solar surplus) was forecast as -47. The following day the model and the naive
+   forecast both predicted around -456 to -490 again, while the real price was only -87 to -130. A
+   model that anchors on yesterday inherits yesterday's outliers.
+
+### 5.5 Odd-looking results, checked
+
+| Observation | Check | Verdict |
+|---|---|---|
+| Negative price while demand is high? | 0 hours with a negative price and residual load above 25 GW | Consistent: negative prices only occur in surplus hours |
+| Price spike while supply is ample? | 0 hours above 250 EUR/MWh with residual load below 20 GW | Consistent |
+| Price of -499 EUR/MWh | 1 May 2026 (public holiday) at midday, residual load -8.3 GW, close to the -500 EUR/MWh minimum of the coupled day-ahead market (a market rule, not derived from this data) | Real, extreme, explained by holiday plus solar surplus |
+| Many prices exactly around zero | 455 hours (2.6%) within 0.1 EUR/MWh of zero | Plausible market behaviour (renewables often bid near zero); not verified here |
+| Prices higher although residual load fell | 2026 vs 2025 at equal conditions (+70 EUR/MWh) | Likely fuel and carbon prices, not in the data |
+| Temperature effect differs between years | +0.1 vs +1.0 EUR/MWh per degree | Weak and unstable: do not rely on it |
+| Noisy-weather model worse than no-weather model | 100% noise gain 3.8% vs 4.9% | Expected: the model learned to trust weather |
+| Missing data | 4 hours without residual load, 46 without weather | Left as missing, never filled; excluded where needed |
+| Jumps | 2 hour-to-hour changes above 300 EUR/MWh | Rare; kept in the data, they coincide with the extreme hours |
+
+None of the checks found data that contradicts the physics of the market. What they found are
+behaviours that look odd but are real, and the model weaknesses listed above.
+
+## 6. What this means for business
+
+![Solar and wind capture rates](analysis/figures/17_solar_wind_capture.png)
+
+| Who | Finding | Number |
+|---|---|---|
+| Solar owner | Solar sells below the average price, and the gap is widest in spring | Solar earns 54% of the average price over the period, only 26% in 2026-04; wind earns 88% |
+| Industrial or EV load with flexibility | Run in the cheapest hours instead of flat | Cheapest 4 hours cost 44 vs 100 EUR/MWh flat: 56% saving, about 56 EUR/MWh |
+| Battery operator | Earnings are seasonal and lumpy; a simple average beats the model at 2 MWh | Best month 2026-09: 447 EUR/day, worst 2025-12: 87 (perfect foresight) |
+| Anyone buying power | Price risk sits in a few evening hours with little wind | 65% of the 119 spike hours are in the evening; mean wind 3.2 GW against 15.5 |
+| Forecast users | Trust the forecast most when the weather changes; check it when nothing changes and after an extreme day | Gain 34% (big fall in wind) and 34% (big rise) vs 3% in stable weather |
+
+![Flexible load savings](analysis/figures/18_flexible_load_savings.png)
+
+A flexible consumer does not need a forecast: day-ahead prices are published the day before.
+The cheapest block of four hours starts at 11:00 or 12:00 on 66% of days, which is consistent with solar driving the saving.
+If one MW of load can run those four hours instead of staying flat, the energy cost falls by
+about 56 EUR per MWh moved, roughly 82,467 EUR per MW and year before grid
+charges and levies.
+
+![Battery earnings by season and weather](analysis/figures/19_battery_by_season_weather.png)
+
+Battery earnings follow the season: 5.1 times higher in the best month than in the worst.
+The weather model helps most on cold, dull days (about +10 EUR per day over yesterday)
+and loses on hot days (-13); these day groups are exploratory.
+
+For a non-technical reader: the weather decides the price, solar and wind push it down by roughly
+3 EUR/MWh per GW, evenings with no wind are where the money and the risk are, and
+a plain average of recent prices is a surprisingly strong planning tool.
+
 ## What this means
 
 * The forecasting work is sound and honestly measured: a 22% lower error
@@ -240,6 +362,10 @@ is no group where the model's advantage over yesterday is clear at 2 MWh.
   and day-type comparisons are exploratory, with no multiplicity correction.
 * The dispatch model is an exact linear programme under stated physics (no ramp limits, fixed
   efficiency, no price impact). Perfect-foresight revenue is a ceiling, not an expectation.
+* The factor tables are many comparisons on one year of data; treat single bins as hints. Scenario
+  samples can be small (for example 43 calm winter evening hours).
+* Capture rates and flexible-load savings use day-ahead energy prices only: no grid fees, levies,
+  taxes or contract terms.
 * Past results; not trading or investment advice.
 
 ## Reproduce

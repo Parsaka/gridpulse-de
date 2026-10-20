@@ -47,6 +47,8 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 "scripts/gen_tmdl.py" = ["E501"]  # long DAX strings read better on one line
 "scripts/gen_pbir.py" = ["E501"]  # report copy text
 "src/gridpulse/analysis/figures.py" = ["E501"]  # plotting code: long label and style lines
+"src/gridpulse/analysis/figures_factors.py" = ["E501"]  # plotting code
+"src/gridpulse/analysis/factors.py" = ["E501"]  # long dict literals
 "src/gridpulse/analysis/report.py" = ["E501"]  # prose template
 "src/gridpulse/analysis/dashboard.py" = ["E501"]  # Plotly layout dicts and copy text
 

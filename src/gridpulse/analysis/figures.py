@@ -448,6 +448,17 @@ def make_figures(res: dict, df: pd.DataFrame, wf: pd.DataFrame, out_dir: str | P
         fig_sizes(res, df, out / "12_battery_size.png"),
         fig_day_types(res, df, out / "13_day_types.png"),
     ]
+    from gridpulse.analysis import figures_factors as ff
+
+    paths += [
+        ff.fig_factors(res, df, out / "14_forecast_by_factor.png"),
+        ff.fig_weather_effects(res, df, out / "15_weather_effects.png"),
+        ff.fig_scenarios(res, df, out / "16_weather_scenarios.png"),
+        ff.fig_capture(res, df, out / "17_solar_wind_capture.png"),
+        ff.fig_consumer(res, df, out / "18_flexible_load_savings.png"),
+        ff.fig_battery_factors(res, df, out / "19_battery_by_season_weather.png"),
+        ff.fig_calibration(res, df, wf, out / "20_actual_vs_forecast.png"),
+    ]
     if res["forecast"]["noise"]:
         paths.insert(5, fig_noise(res, df, out / "06_noise_sensitivity.png"))
     return paths

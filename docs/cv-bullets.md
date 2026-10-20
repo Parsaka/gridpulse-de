@@ -15,7 +15,11 @@ Label it as a personal project. Do not imply professional Data Engineering exper
   sensitivity and an exact linear-programming dispatch model.
 - Found that prices at equal residual load rose by about 70 EUR/MWh year on year and that
   negative-price probability at low residual load fell from 67% to 41%; published the analysis,
-  thirteen figures and an interactive Plotly dashboard. Added a shadow-mode log to score real forecasts.
+  twenty figures, a plain-language business summary and an interactive Plotly dashboard. Added a shadow-mode log to score real forecasts.
+- Quantified the drivers: each GW of wind or solar lowers the day-ahead price by about 3 EUR/MWh,
+  solar sells at 54% of the average price (26% in spring), flexible load can cut energy cost by
+  56% by running in the cheapest four hours, and the forecast helps most when the weather changes
+  from yesterday (gain 34%) and least in winter (6%, not significant).
 - Served forecasts via FastAPI (API-key auth, rate limiting) with Prometheus metrics, Grafana and
   alert rules; load-tested (1000 requests, p95 829 ms) and ran a documented failure drill.
 - Deployed Azure infrastructure with Terraform (ADLS Gen2, Key Vault, Log Analytics, budget alerts, remote state

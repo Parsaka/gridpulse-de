@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-20T19:12:27+00:00",
+    "generated_at": "2026-10-20T19:32:06+00:00",
     "market_hours": 17520,
     "market_from": "2024-10-19 00:00:00+00:00",
     "market_to": "2026-10-18 23:00:00+00:00",
@@ -3259,6 +3259,1886 @@
       "capacity_mwh": 2.0,
       "round_trip_efficiency": 0.88,
       "throughput_cost_eur_per_mwh": 3.0
+    }
+  },
+  "factors": {
+    "error_by_factor": {
+      "wind_speed_kmh": {
+        "label": "Wind speed (national mean)",
+        "unit": "km/h",
+        "bins": [
+          {
+            "bin": "3.67 to 8.77",
+            "hours": 1830,
+            "mae_naive": 28.0729,
+            "mae_model": 21.837,
+            "gain": 0.2221,
+            "gain_ci": [
+              0.1255,
+              0.2921
+            ],
+            "mean_price": 140.5486
+          },
+          {
+            "bin": "8.77 to 10.7",
+            "hours": 1829,
+            "mae_naive": 30.0659,
+            "mae_model": 24.0095,
+            "gain": 0.2014,
+            "gain_ci": [
+              0.1225,
+              0.2656
+            ],
+            "mean_price": 125.1344
+          },
+          {
+            "bin": "10.7 to 13",
+            "hours": 1829,
+            "mae_naive": 27.9042,
+            "mae_model": 23.0934,
+            "gain": 0.1724,
+            "gain_ci": [
+              0.0982,
+              0.2346
+            ],
+            "mean_price": 110.4987
+          },
+          {
+            "bin": "13 to 15.9",
+            "hours": 1831,
+            "mae_naive": 28.9233,
+            "mae_model": 23.8859,
+            "gain": 0.1742,
+            "gain_ci": [
+              0.0981,
+              0.2408
+            ],
+            "mean_price": 95.7314
+          },
+          {
+            "bin": "15.9 to 33.5",
+            "hours": 1827,
+            "mae_naive": 36.3967,
+            "mae_model": 24.7113,
+            "gain": 0.3211,
+            "gain_ci": [
+              0.2375,
+              0.3872
+            ],
+            "mean_price": 60.6793
+          }
+        ]
+      },
+      "solar_kwh_m2": {
+        "label": "Solar radiation",
+        "unit": "kWh/m2",
+        "bins": [
+          {
+            "bin": "-0.001 to 0.0689",
+            "hours": 5489,
+            "mae_naive": 25.4304,
+            "mae_model": 21.1907,
+            "gain": 0.1667,
+            "gain_ci": [
+              0.112,
+              0.2198
+            ],
+            "mean_price": 119.0557
+          },
+          {
+            "bin": "0.0689 to 0.283",
+            "hours": 1830,
+            "mae_naive": 36.6121,
+            "mae_model": 27.3044,
+            "gain": 0.2542,
+            "gain_ci": [
+              0.193,
+              0.3103
+            ],
+            "mean_price": 119.7396
+          },
+          {
+            "bin": "0.283 to 0.909",
+            "hours": 1827,
+            "mae_naive": 38.461,
+            "mae_model": 26.6626,
+            "gain": 0.3068,
+            "gain_ci": [
+              0.2498,
+              0.3602
+            ],
+            "mean_price": 55.6662
+          }
+        ]
+      },
+      "temperature_c": {
+        "label": "Temperature",
+        "unit": "C",
+        "bins": [
+          {
+            "bin": "-8.36 to 3.96",
+            "hours": 1835,
+            "mae_naive": 23.9815,
+            "mae_model": 18.9105,
+            "gain": 0.2115,
+            "gain_ci": [
+              0.1182,
+              0.2975
+            ],
+            "mean_price": 107.7612
+          },
+          {
+            "bin": "3.96 to 9.02",
+            "hours": 1824,
+            "mae_naive": 25.5058,
+            "mae_model": 21.107,
+            "gain": 0.1725,
+            "gain_ci": [
+              0.0565,
+              0.261
+            ],
+            "mean_price": 99.1882
+          },
+          {
+            "bin": "9.02 to 13.3",
+            "hours": 1829,
+            "mae_naive": 33.9775,
+            "mae_model": 24.0509,
+            "gain": 0.2922,
+            "gain_ci": [
+              0.2,
+              0.3536
+            ],
+            "mean_price": 100.6393
+          },
+          {
+            "bin": "13.3 to 18.5",
+            "hours": 1829,
+            "mae_naive": 32.2157,
+            "mae_model": 24.888,
+            "gain": 0.2275,
+            "gain_ci": [
+              0.154,
+              0.2889
+            ],
+            "mean_price": 118.274
+          },
+          {
+            "bin": "18.5 to 36.4",
+            "hours": 1829,
+            "mae_naive": 35.6806,
+            "mae_model": 28.5874,
+            "gain": 0.1988,
+            "gain_ci": [
+              0.1169,
+              0.2719
+            ],
+            "mean_price": 106.7626
+          }
+        ]
+      },
+      "cloud_cover_pct": {
+        "label": "Cloud cover",
+        "unit": "%",
+        "bins": [
+          {
+            "bin": "-0.001 to 46.9",
+            "hours": 1830,
+            "mae_naive": 29.0807,
+            "mae_model": 23.514,
+            "gain": 0.1914,
+            "gain_ci": [
+              0.0844,
+              0.2725
+            ],
+            "mean_price": 107.9505
+          },
+          {
+            "bin": "46.9 to 70.6",
+            "hours": 1847,
+            "mae_naive": 31.7716,
+            "mae_model": 24.6842,
+            "gain": 0.2231,
+            "gain_ci": [
+              0.1573,
+              0.2822
+            ],
+            "mean_price": 109.9717
+          },
+          {
+            "bin": "70.6 to 84.6",
+            "hours": 1843,
+            "mae_naive": 30.4494,
+            "mae_model": 24.1017,
+            "gain": 0.2085,
+            "gain_ci": [
+              0.1363,
+              0.2703
+            ],
+            "mean_price": 105.0332
+          },
+          {
+            "bin": "84.6 to 94.3",
+            "hours": 1930,
+            "mae_naive": 31.0347,
+            "mae_model": 23.6218,
+            "gain": 0.2389,
+            "gain_ci": [
+              0.1655,
+              0.3045
+            ],
+            "mean_price": 103.2019
+          },
+          {
+            "bin": "94.3 to 100",
+            "hours": 1696,
+            "mae_naive": 28.8567,
+            "mae_model": 21.4408,
+            "gain": 0.257,
+            "gain_ci": [
+              0.1669,
+              0.3316
+            ],
+            "mean_price": 106.6623
+          }
+        ]
+      },
+      "wind_gw": {
+        "label": "Wind generation",
+        "unit": "GW",
+        "bins": [
+          {
+            "bin": "0.203 to 5.83",
+            "hours": 1838,
+            "mae_naive": 36.6834,
+            "mae_model": 27.8674,
+            "gain": 0.2403,
+            "gain_ci": [
+              0.1641,
+              0.3093
+            ],
+            "mean_price": 123.2193
+          },
+          {
+            "bin": "5.83 to 11.5",
+            "hours": 1837,
+            "mae_naive": 30.1751,
+            "mae_model": 24.3691,
+            "gain": 0.1924,
+            "gain_ci": [
+              0.1157,
+              0.2779
+            ],
+            "mean_price": 123.7885
+          },
+          {
+            "bin": "11.5 to 18",
+            "hours": 1838,
+            "mae_naive": 25.7542,
+            "mae_model": 21.198,
+            "gain": 0.1769,
+            "gain_ci": [
+              0.104,
+              0.2484
+            ],
+            "mean_price": 116.7521
+          },
+          {
+            "bin": "18 to 26",
+            "hours": 1837,
+            "mae_naive": 23.6584,
+            "mae_model": 19.7096,
+            "gain": 0.1669,
+            "gain_ci": [
+              0.0687,
+              0.2448
+            ],
+            "mean_price": 99.5423
+          },
+          {
+            "bin": "26 to 53.2",
+            "hours": 1838,
+            "mae_naive": 35.1264,
+            "mae_model": 24.5814,
+            "gain": 0.3002,
+            "gain_ci": [
+              0.2134,
+              0.3669
+            ],
+            "mean_price": 70.9741
+          }
+        ]
+      },
+      "solar_gw": {
+        "label": "Solar generation",
+        "unit": "GW",
+        "bins": [
+          {
+            "bin": "-0.001 to 0.0108",
+            "hours": 1843,
+            "mae_naive": 22.8316,
+            "mae_model": 20.862,
+            "gain": 0.0863,
+            "gain_ci": [
+              0.0066,
+              0.1574
+            ],
+            "mean_price": 120.2003
+          },
+          {
+            "bin": "0.0108 to 0.0297",
+            "hours": 1832,
+            "mae_naive": 21.0509,
+            "mae_model": 17.542,
+            "gain": 0.1667,
+            "gain_ci": [
+              0.0752,
+              0.2477
+            ],
+            "mean_price": 103.4395
+          },
+          {
+            "bin": "0.0297 to 3.87",
+            "hours": 1838,
+            "mae_naive": 36.8079,
+            "mae_model": 28.3842,
+            "gain": 0.2289,
+            "gain_ci": [
+              0.1699,
+              0.2836
+            ],
+            "mean_price": 145.7552
+          },
+          {
+            "bin": "3.87 to 20.9",
+            "hours": 1837,
+            "mae_naive": 31.0948,
+            "mae_model": 23.6722,
+            "gain": 0.2387,
+            "gain_ci": [
+              0.1746,
+              0.2953
+            ],
+            "mean_price": 114.4342
+          },
+          {
+            "bin": "20.9 to 58.1",
+            "hours": 1838,
+            "mae_naive": 39.6065,
+            "mae_model": 27.2545,
+            "gain": 0.3119,
+            "gain_ci": [
+              0.2546,
+              0.37
+            ],
+            "mean_price": 50.3984
+          }
+        ]
+      },
+      "load_gw": {
+        "label": "Electricity demand",
+        "unit": "GW",
+        "bins": [
+          {
+            "bin": "32.6 to 44.9",
+            "hours": 1838,
+            "mae_naive": 24.3878,
+            "mae_model": 21.5575,
+            "gain": 0.1161,
+            "gain_ci": [
+              0.0179,
+              0.1908
+            ],
+            "mean_price": 95.4331
+          },
+          {
+            "bin": "44.9 to 50.6",
+            "hours": 1837,
+            "mae_naive": 28.5548,
+            "mae_model": 20.6715,
+            "gain": 0.2761,
+            "gain_ci": [
+              0.2111,
+              0.3361
+            ],
+            "mean_price": 98.3642
+          },
+          {
+            "bin": "50.6 to 56.2",
+            "hours": 1838,
+            "mae_naive": 29.393,
+            "mae_model": 21.8446,
+            "gain": 0.2568,
+            "gain_ci": [
+              0.196,
+              0.3181
+            ],
+            "mean_price": 104.2659
+          },
+          {
+            "bin": "56.2 to 61.5",
+            "hours": 1837,
+            "mae_naive": 35.3064,
+            "mae_model": 25.9185,
+            "gain": 0.2659,
+            "gain_ci": [
+              0.2019,
+              0.3258
+            ],
+            "mean_price": 115.2613
+          },
+          {
+            "bin": "61.5 to 78.2",
+            "hours": 1838,
+            "mae_naive": 33.761,
+            "mae_model": 27.7348,
+            "gain": 0.1785,
+            "gain_ci": [
+              0.0745,
+              0.2744
+            ],
+            "mean_price": 120.9465
+          }
+        ]
+      },
+      "residual_gw": {
+        "label": "Residual load",
+        "unit": "GW",
+        "bins": [
+          {
+            "bin": "-15.6 to 13.1",
+            "hours": 1838,
+            "mae_naive": 41.6917,
+            "mae_model": 27.769,
+            "gain": 0.3339,
+            "gain_ci": [
+              0.2678,
+              0.393
+            ],
+            "mean_price": 28.2956
+          },
+          {
+            "bin": "13.1 to 25.2",
+            "hours": 1837,
+            "mae_naive": 30.5193,
+            "mae_model": 22.6441,
+            "gain": 0.258,
+            "gain_ci": [
+              0.2003,
+              0.3152
+            ],
+            "mean_price": 97.6524
+          },
+          {
+            "bin": "25.2 to 33.7",
+            "hours": 1838,
+            "mae_naive": 21.611,
+            "mae_model": 18.7571,
+            "gain": 0.1321,
+            "gain_ci": [
+              0.0323,
+              0.2103
+            ],
+            "mean_price": 118.9901
+          },
+          {
+            "bin": "33.7 to 41.6",
+            "hours": 1837,
+            "mae_naive": 21.7217,
+            "mae_model": 19.3926,
+            "gain": 0.1072,
+            "gain_ci": [
+              0.0138,
+              0.1892
+            ],
+            "mean_price": 131.0587
+          },
+          {
+            "bin": "41.6 to 68.3",
+            "hours": 1838,
+            "mae_naive": 35.8529,
+            "mae_model": 29.1616,
+            "gain": 0.1866,
+            "gain_ci": [
+              0.1081,
+              0.2569
+            ],
+            "mean_price": 158.2824
+          }
+        ]
+      },
+      "d_temperature": {
+        "label": "Temperature change vs yesterday",
+        "unit": "C",
+        "bins": [
+          {
+            "bin": "-9.11 to -1.82",
+            "hours": 1825,
+            "mae_naive": 29.3517,
+            "mae_model": 22.9558,
+            "gain": 0.2179,
+            "gain_ci": [
+              0.1334,
+              0.2972
+            ],
+            "mean_price": 104.2613
+          },
+          {
+            "bin": "-1.82 to -0.522",
+            "hours": 1830,
+            "mae_naive": 27.6868,
+            "mae_model": 22.6118,
+            "gain": 0.1833,
+            "gain_ci": [
+              0.1109,
+              0.256
+            ],
+            "mean_price": 110.3782
+          },
+          {
+            "bin": "-0.522 to 0.589",
+            "hours": 1823,
+            "mae_naive": 30.7177,
+            "mae_model": 23.5444,
+            "gain": 0.2335,
+            "gain_ci": [
+              0.1666,
+              0.2906
+            ],
+            "mean_price": 110.5628
+          },
+          {
+            "bin": "0.589 to 1.94",
+            "hours": 1820,
+            "mae_naive": 30.7048,
+            "mae_model": 22.3411,
+            "gain": 0.2724,
+            "gain_ci": [
+              0.2064,
+              0.3255
+            ],
+            "mean_price": 108.4889
+          },
+          {
+            "bin": "1.94 to 9.43",
+            "hours": 1825,
+            "mae_naive": 33.1354,
+            "mae_model": 26.2148,
+            "gain": 0.2089,
+            "gain_ci": [
+              0.1132,
+              0.283
+            ],
+            "mean_price": 98.2264
+          }
+        ]
+      },
+      "d_wind": {
+        "label": "Wind speed change vs yesterday",
+        "unit": "km/h",
+        "bins": [
+          {
+            "bin": "-18.8 to -3.44",
+            "hours": 1830,
+            "mae_naive": 40.1838,
+            "mae_model": 26.551,
+            "gain": 0.3393,
+            "gain_ci": [
+              0.2774,
+              0.4002
+            ],
+            "mean_price": 117.2738
+          },
+          {
+            "bin": "-3.44 to -0.989",
+            "hours": 1820,
+            "mae_naive": 25.0961,
+            "mae_model": 23.0669,
+            "gain": 0.0809,
+            "gain_ci": [
+              0.0015,
+              0.1586
+            ],
+            "mean_price": 115.7786
+          },
+          {
+            "bin": "-0.989 to 1.08",
+            "hours": 1824,
+            "mae_naive": 23.5831,
+            "mae_model": 22.8503,
+            "gain": 0.0311,
+            "gain_ci": [
+              -0.0578,
+              0.1108
+            ],
+            "mean_price": 109.7965
+          },
+          {
+            "bin": "1.08 to 3.43",
+            "hours": 1824,
+            "mae_naive": 25.3439,
+            "mae_model": 20.7255,
+            "gain": 0.1822,
+            "gain_ci": [
+              0.1069,
+              0.2489
+            ],
+            "mean_price": 108.3572
+          },
+          {
+            "bin": "3.43 to 18.6",
+            "hours": 1825,
+            "mae_naive": 37.333,
+            "mae_model": 24.4635,
+            "gain": 0.3447,
+            "gain_ci": [
+              0.2839,
+              0.399
+            ],
+            "mean_price": 80.7109
+          }
+        ]
+      },
+      "price_yesterday": {
+        "label": "Yesterday's average price",
+        "unit": "EUR/MWh",
+        "bins": [
+          {
+            "bin": "-16.3 to 78.7",
+            "hours": 1849,
+            "mae_naive": 38.5374,
+            "mae_model": 25.8954,
+            "gain": 0.328,
+            "gain_ci": [
+              0.2584,
+              0.3948
+            ],
+            "mean_price": 75.6495
+          },
+          {
+            "bin": "78.7 to 96.4",
+            "hours": 1847,
+            "mae_naive": 25.1516,
+            "mae_model": 20.6494,
+            "gain": 0.179,
+            "gain_ci": [
+              0.0703,
+              0.2746
+            ],
+            "mean_price": 91.1059
+          },
+          {
+            "bin": "96.4 to 112",
+            "hours": 1824,
+            "mae_naive": 23.7976,
+            "mae_model": 19.2664,
+            "gain": 0.1904,
+            "gain_ci": [
+              0.0781,
+              0.2902
+            ],
+            "mean_price": 107.4844
+          },
+          {
+            "bin": "112 to 138",
+            "hours": 1846,
+            "mae_naive": 25.8571,
+            "mae_model": 21.2993,
+            "gain": 0.1763,
+            "gain_ci": [
+              0.074,
+              0.2698
+            ],
+            "mean_price": 116.52
+          },
+          {
+            "bin": "138 to 257",
+            "hours": 1826,
+            "mae_naive": 38.0354,
+            "mae_model": 30.6074,
+            "gain": 0.1953,
+            "gain_ci": [
+              0.1012,
+              0.277
+            ],
+            "mean_price": 144.1372
+          }
+        ]
+      },
+      "volatility_yesterday": {
+        "label": "Yesterday's price volatility",
+        "unit": "EUR/MWh",
+        "bins": [
+          {
+            "bin": "1.16 to 18.3",
+            "hours": 1849,
+            "mae_naive": 20.3437,
+            "mae_model": 17.9973,
+            "gain": 0.1153,
+            "gain_ci": [
+              -0.0231,
+              0.2513
+            ],
+            "mean_price": 93.5146
+          },
+          {
+            "bin": "18.3 to 33.3",
+            "hours": 1850,
+            "mae_naive": 26.333,
+            "mae_model": 21.2674,
+            "gain": 0.1924,
+            "gain_ci": [
+              0.0691,
+              0.2916
+            ],
+            "mean_price": 99.061
+          },
+          {
+            "bin": "33.3 to 47.6",
+            "hours": 1823,
+            "mae_naive": 33.7477,
+            "mae_model": 24.672,
+            "gain": 0.2689,
+            "gain_ci": [
+              0.1753,
+              0.3539
+            ],
+            "mean_price": 108.2268
+          },
+          {
+            "bin": "47.6 to 63.4",
+            "hours": 1848,
+            "mae_naive": 31.8153,
+            "mae_model": 24.5659,
+            "gain": 0.2279,
+            "gain_ci": [
+              0.1469,
+              0.299
+            ],
+            "mean_price": 112.74
+          },
+          {
+            "bin": "63.4 to 188",
+            "hours": 1822,
+            "mae_naive": 39.3271,
+            "mae_model": 29.2937,
+            "gain": 0.2551,
+            "gain_ci": [
+              0.1623,
+              0.3246
+            ],
+            "mean_price": 121.1186
+          }
+        ]
+      },
+      "daypart": {
+        "label": "Time of day",
+        "unit": "",
+        "bins": [
+          {
+            "bin": "night",
+            "hours": 2298,
+            "mae_naive": 20.0685,
+            "mae_model": 17.2657,
+            "gain": 0.1397,
+            "gain_ci": [
+              0.0457,
+              0.2159
+            ],
+            "mean_price": 105.3243
+          },
+          {
+            "bin": "morning",
+            "hours": 1532,
+            "mae_naive": 34.1103,
+            "mae_model": 24.1647,
+            "gain": 0.2916,
+            "gain_ci": [
+              0.2364,
+              0.3433
+            ],
+            "mean_price": 121.2031
+          },
+          {
+            "bin": "midday",
+            "hours": 2298,
+            "mae_naive": 35.7568,
+            "mae_model": 26.412,
+            "gain": 0.2613,
+            "gain_ci": [
+              0.2067,
+              0.3183
+            ],
+            "mean_price": 64.1823
+          },
+          {
+            "bin": "evening",
+            "hours": 1915,
+            "mae_naive": 37.0699,
+            "mae_model": 29.0427,
+            "gain": 0.2165,
+            "gain_ci": [
+              0.1553,
+              0.2747
+            ],
+            "mean_price": 134.0962
+          },
+          {
+            "bin": "late",
+            "hours": 1149,
+            "mae_naive": 23.2987,
+            "mae_model": 20.3318,
+            "gain": 0.1273,
+            "gain_ci": [
+              0.0355,
+              0.2079
+            ],
+            "mean_price": 130.9719
+          }
+        ]
+      },
+      "weekend": {
+        "label": "Weekend",
+        "unit": "",
+        "bins": [
+          {
+            "bin": "weekday",
+            "hours": 6552,
+            "mae_naive": 31.162,
+            "mae_model": 24.3868,
+            "gain": 0.2174,
+            "gain_ci": [
+              0.1627,
+              0.2655
+            ],
+            "mean_price": 115.7444
+          },
+          {
+            "bin": "weekend",
+            "hours": 2640,
+            "mae_naive": 28.0791,
+            "mae_model": 21.4347,
+            "gain": 0.2366,
+            "gain_ci": [
+              0.1619,
+              0.3026
+            ],
+            "mean_price": 84.8989
+          }
+        ]
+      },
+      "holiday": {
+        "label": "Public holiday",
+        "unit": "",
+        "bins": [
+          {
+            "bin": "normal day",
+            "hours": 8952,
+            "mae_naive": 30.1043,
+            "mae_model": 23.4634,
+            "gain": 0.2206,
+            "gain_ci": [
+              0.1717,
+              0.2636
+            ],
+            "mean_price": 107.9421
+          },
+          {
+            "bin": "holiday",
+            "hours": 240,
+            "mae_naive": 36.7013,
+            "mae_model": 26.3541,
+            "gain": 0.2819,
+            "gain_ci": [
+              0.0128,
+              0.504
+            ],
+            "mean_price": 67.4705
+          }
+        ]
+      },
+      "season": {
+        "label": "Season",
+        "unit": "",
+        "bins": [
+          {
+            "bin": "winter",
+            "hours": 2160,
+            "mae_naive": 20.7071,
+            "mae_model": 19.5312,
+            "gain": 0.0568,
+            "gain_ci": [
+              -0.097,
+              0.1769
+            ],
+            "mean_price": 100.1619
+          },
+          {
+            "bin": "spring",
+            "hours": 2207,
+            "mae_naive": 33.2218,
+            "mae_model": 22.2898,
+            "gain": 0.3291,
+            "gain_ci": [
+              0.2685,
+              0.3874
+            ],
+            "mean_price": 91.9212
+          },
+          {
+            "bin": "summer",
+            "hours": 2208,
+            "mae_naive": 29.7028,
+            "mae_model": 23.5331,
+            "gain": 0.2077,
+            "gain_ci": [
+              0.1028,
+              0.302
+            ],
+            "mean_price": 114.0012
+          },
+          {
+            "bin": "autumn",
+            "hours": 2617,
+            "mae_naive": 36.1753,
+            "mae_model": 27.9051,
+            "gain": 0.2286,
+            "gain_ci": [
+              0.1542,
+              0.2862
+            ],
+            "mean_price": 119.0509
+          }
+        ]
+      }
+    },
+    "weather_effects": {
+      "effects": {
+        "all": {
+          "load_gw": {
+            "label": "+1 GW demand",
+            "effect": 3.7716,
+            "ci": [
+              3.4049,
+              4.1659
+            ]
+          },
+          "wind_gw": {
+            "label": "+1 GW wind",
+            "effect": -2.9927,
+            "ci": [
+              -3.2378,
+              -2.7851
+            ]
+          },
+          "solar_gw": {
+            "label": "+1 GW solar",
+            "effect": -3.2726,
+            "ci": [
+              -3.4522,
+              -3.1166
+            ]
+          },
+          "temperature_c": {
+            "label": "+1 C temperature",
+            "effect": 0.9947,
+            "ci": [
+              0.5926,
+              1.4588
+            ]
+          }
+        },
+        "year 1": {
+          "load_gw": {
+            "label": "+1 GW demand",
+            "effect": 4.0124,
+            "ci": [
+              3.5117,
+              4.4787
+            ]
+          },
+          "wind_gw": {
+            "label": "+1 GW wind",
+            "effect": -3.1108,
+            "ci": [
+              -3.4337,
+              -2.7608
+            ]
+          },
+          "solar_gw": {
+            "label": "+1 GW solar",
+            "effect": -3.4451,
+            "ci": [
+              -3.6845,
+              -3.2314
+            ]
+          },
+          "temperature_c": {
+            "label": "+1 C temperature",
+            "effect": 0.1082,
+            "ci": [
+              -0.3932,
+              0.5918
+            ]
+          }
+        },
+        "year 2": {
+          "load_gw": {
+            "label": "+1 GW demand",
+            "effect": 2.8207,
+            "ci": [
+              2.3215,
+              3.4677
+            ]
+          },
+          "wind_gw": {
+            "label": "+1 GW wind",
+            "effect": -3.1482,
+            "ci": [
+              -3.3465,
+              -2.9093
+            ]
+          },
+          "solar_gw": {
+            "label": "+1 GW solar",
+            "effect": -3.6929,
+            "ci": [
+              -3.8788,
+              -3.5254
+            ]
+          },
+          "temperature_c": {
+            "label": "+1 C temperature",
+            "effect": 1.0321,
+            "ci": [
+              0.5224,
+              1.6367
+            ]
+          }
+        }
+      },
+      "r2": {
+        "hour of day, month, weekend": 0.2865,
+        "+ electricity demand": 0.3488,
+        "+ wind and solar generation": 0.6639,
+        "+ temperature": 0.6668
+      }
+    },
+    "scenarios": [
+      {
+        "scenario": "Sunny weekend midday",
+        "hours": 454,
+        "mean_price": 19.3553,
+        "p10": -14.047,
+        "p90": 97.339,
+        "share_negative": 0.4978,
+        "share_above_200": 0.0,
+        "mae_naive": 37.3983,
+        "mae_model": 25.4809,
+        "gain": 0.3187
+      },
+      {
+        "scenario": "Sunny weekday midday",
+        "hours": 1170,
+        "mean_price": 62.1871,
+        "p10": -0.051,
+        "p90": 119.431,
+        "share_negative": 0.1239,
+        "share_above_200": 0.0,
+        "mae_naive": 36.2129,
+        "mae_model": 27.7109,
+        "gain": 0.2348
+      },
+      {
+        "scenario": "Windy night",
+        "hours": 908,
+        "mean_price": 75.063,
+        "p10": 9.952,
+        "p90": 121.022,
+        "share_negative": 0.0209,
+        "share_above_200": 0.0,
+        "mae_naive": 26.6734,
+        "mae_model": 19.9598,
+        "gain": 0.2517
+      },
+      {
+        "scenario": "Calm winter evening",
+        "hours": 43,
+        "mean_price": 165.084,
+        "p10": 119.054,
+        "p90": 249.882,
+        "share_negative": 0.0,
+        "share_above_200": 0.2093,
+        "mae_naive": 30.3819,
+        "mae_model": 30.065,
+        "gain": 0.0104
+      },
+      {
+        "scenario": "Windy winter evening",
+        "hours": 293,
+        "mean_price": 105.4891,
+        "p10": 83.07,
+        "p90": 131.198,
+        "share_negative": 0.0,
+        "share_above_200": 0.0034,
+        "mae_naive": 21.3243,
+        "mae_model": 23.1544,
+        "gain": -0.0858
+      },
+      {
+        "scenario": "Cold day (below 0 C)",
+        "hours": 729,
+        "mean_price": 104.8113,
+        "p10": 78.196,
+        "p90": 137.172,
+        "share_negative": 0.0,
+        "share_above_200": 0.0137,
+        "mae_naive": 17.448,
+        "mae_model": 15.1548,
+        "gain": 0.1314
+      },
+      {
+        "scenario": "Hot day (above 28 C)",
+        "hours": 201,
+        "mean_price": 108.0917,
+        "p10": 0.25,
+        "p90": 221.25,
+        "share_negative": 0.0846,
+        "share_above_200": 0.1393,
+        "mae_naive": 39.4962,
+        "mae_model": 31.7547,
+        "gain": 0.196
+      },
+      {
+        "scenario": "Public holiday",
+        "hours": 240,
+        "mean_price": 67.4705,
+        "p10": -0.044,
+        "p90": 151.984,
+        "share_negative": 0.1125,
+        "share_above_200": 0.0208,
+        "mae_naive": 36.7013,
+        "mae_model": 26.3541,
+        "gain": 0.2819
+      },
+      {
+        "scenario": "Overcast summer midday",
+        "hours": 57,
+        "mean_price": 61.5198,
+        "p10": -0.298,
+        "p90": 132.086,
+        "share_negative": 0.193,
+        "share_above_200": 0.0,
+        "mae_naive": 38.7493,
+        "mae_model": 23.6856,
+        "gain": 0.3887
+      },
+      {
+        "scenario": "All hours",
+        "hours": 9192,
+        "mean_price": 106.8854,
+        "p10": 14.741,
+        "p90": 175.884,
+        "share_negative": 0.0553,
+        "share_above_200": 0.0513,
+        "mae_naive": 30.2766,
+        "mae_model": 23.5389,
+        "gain": 0.2225
+      }
+    ],
+    "capture_rates": {
+      "months": [
+        {
+          "month": "2024-10",
+          "baseload": 100.7237,
+          "solar_price": 83.4483,
+          "wind_price": 91.5438,
+          "solar_capture": 0.8285,
+          "wind_capture": 0.9089
+        },
+        {
+          "month": "2024-11",
+          "baseload": 113.9064,
+          "solar_price": 100.6163,
+          "wind_price": 92.8015,
+          "solar_capture": 0.8833,
+          "wind_capture": 0.8147
+        },
+        {
+          "month": "2024-12",
+          "baseload": 108.3156,
+          "solar_price": 111.5237,
+          "wind_price": 75.6703,
+          "solar_capture": 1.0296,
+          "wind_capture": 0.6986
+        },
+        {
+          "month": "2025-01",
+          "baseload": 114.1402,
+          "solar_price": 115.5634,
+          "wind_price": 89.7487,
+          "solar_capture": 1.0125,
+          "wind_capture": 0.7863
+        },
+        {
+          "month": "2025-02",
+          "baseload": 128.5224,
+          "solar_price": 110.872,
+          "wind_price": 116.8002,
+          "solar_capture": 0.8627,
+          "wind_capture": 0.9088
+        },
+        {
+          "month": "2025-03",
+          "baseload": 94.7275,
+          "solar_price": 50.7957,
+          "wind_price": 81.9902,
+          "solar_capture": 0.5362,
+          "wind_capture": 0.8655
+        },
+        {
+          "month": "2025-04",
+          "baseload": 77.9357,
+          "solar_price": 31.3598,
+          "wind_price": 77.7483,
+          "solar_capture": 0.4024,
+          "wind_capture": 0.9976
+        },
+        {
+          "month": "2025-05",
+          "baseload": 67.3386,
+          "solar_price": 21.6658,
+          "wind_price": 66.5859,
+          "solar_capture": 0.3217,
+          "wind_capture": 0.9888
+        },
+        {
+          "month": "2025-06",
+          "baseload": 63.9875,
+          "solar_price": 20.069,
+          "wind_price": 59.0267,
+          "solar_capture": 0.3136,
+          "wind_capture": 0.9225
+        },
+        {
+          "month": "2025-07",
+          "baseload": 87.7952,
+          "solar_price": 59.8322,
+          "wind_price": 83.5365,
+          "solar_capture": 0.6815,
+          "wind_capture": 0.9515
+        },
+        {
+          "month": "2025-08",
+          "baseload": 76.9903,
+          "solar_price": 39.077,
+          "wind_price": 70.8754,
+          "solar_capture": 0.5076,
+          "wind_capture": 0.9206
+        },
+        {
+          "month": "2025-09",
+          "baseload": 83.5111,
+          "solar_price": 44.2882,
+          "wind_price": 67.6661,
+          "solar_capture": 0.5303,
+          "wind_capture": 0.8103
+        },
+        {
+          "month": "2025-10",
+          "baseload": 84.4027,
+          "solar_price": 71.7254,
+          "wind_price": 61.4113,
+          "solar_capture": 0.8498,
+          "wind_capture": 0.7276
+        },
+        {
+          "month": "2025-11",
+          "baseload": 101.8823,
+          "solar_price": 92.0448,
+          "wind_price": 90.3151,
+          "solar_capture": 0.9034,
+          "wind_capture": 0.8865
+        },
+        {
+          "month": "2025-12",
+          "baseload": 93.4702,
+          "solar_price": 94.5149,
+          "wind_price": 84.465,
+          "solar_capture": 1.0112,
+          "wind_capture": 0.9037
+        },
+        {
+          "month": "2026-01",
+          "baseload": 110.0913,
+          "solar_price": 111.2472,
+          "wind_price": 99.4693,
+          "solar_capture": 1.0105,
+          "wind_capture": 0.9035
+        },
+        {
+          "month": "2026-02",
+          "baseload": 96.5771,
+          "solar_price": 78.7074,
+          "wind_price": 89.5009,
+          "solar_capture": 0.815,
+          "wind_capture": 0.9267
+        },
+        {
+          "month": "2026-03",
+          "baseload": 99.2884,
+          "solar_price": 57.5122,
+          "wind_price": 80.4314,
+          "solar_capture": 0.5792,
+          "wind_capture": 0.8101
+        },
+        {
+          "month": "2026-04",
+          "baseload": 78.5162,
+          "solar_price": 20.2683,
+          "wind_price": 72.4562,
+          "solar_capture": 0.2581,
+          "wind_capture": 0.9228
+        },
+        {
+          "month": "2026-05",
+          "baseload": 97.5366,
+          "solar_price": 38.9261,
+          "wind_price": 101.2695,
+          "solar_capture": 0.3991,
+          "wind_capture": 1.0383
+        },
+        {
+          "month": "2026-06",
+          "baseload": 109.5166,
+          "solar_price": 64.9188,
+          "wind_price": 88.1619,
+          "solar_capture": 0.5928,
+          "wind_capture": 0.805
+        },
+        {
+          "month": "2026-07",
+          "baseload": 105.4474,
+          "solar_price": 55.1356,
+          "wind_price": 95.17,
+          "solar_capture": 0.5229,
+          "wind_capture": 0.9025
+        },
+        {
+          "month": "2026-08",
+          "baseload": 126.8949,
+          "solar_price": 66.623,
+          "wind_price": 124.3058,
+          "solar_capture": 0.525,
+          "wind_capture": 0.9796
+        },
+        {
+          "month": "2026-09",
+          "baseload": 144.8208,
+          "solar_price": 85.2498,
+          "wind_price": 120.8874,
+          "solar_capture": 0.5887,
+          "wind_capture": 0.8347
+        },
+        {
+          "month": "2026-10",
+          "baseload": 163.9854,
+          "solar_price": 128.0944,
+          "wind_price": 138.3132,
+          "solar_capture": 0.7811,
+          "wind_capture": 0.8434
+        }
+      ],
+      "solar_capture_all": 0.5433,
+      "wind_capture_all": 0.8753
+    },
+    "consumer_shift": {
+      "hours_per_day": 4,
+      "avg_flat": 100.0806,
+      "avg_cheapest_hours": 43.5964,
+      "avg_cheapest_block": 43.8973,
+      "saving_eur_mwh": 56.4843,
+      "saving_share": 0.5644,
+      "eur_per_mw_year_if_load_is_hours": 82467.0088,
+      "by_month": [
+        {
+          "month": "2024-10",
+          "flat": 101.9181,
+          "cheapest_hours": 66.3081
+        },
+        {
+          "month": "2024-11",
+          "flat": 113.9064,
+          "cheapest_hours": 76.7225
+        },
+        {
+          "month": "2024-12",
+          "flat": 108.3156,
+          "cheapest_hours": 58.9734
+        },
+        {
+          "month": "2025-01",
+          "flat": 114.1402,
+          "cheapest_hours": 76.1813
+        },
+        {
+          "month": "2025-02",
+          "flat": 128.5224,
+          "cheapest_hours": 99.9496
+        },
+        {
+          "month": "2025-03",
+          "flat": 94.6159,
+          "cheapest_hours": 37.048
+        },
+        {
+          "month": "2025-04",
+          "flat": 77.9357,
+          "cheapest_hours": 10.4118
+        },
+        {
+          "month": "2025-05",
+          "flat": 67.3386,
+          "cheapest_hours": -5.9886
+        },
+        {
+          "month": "2025-06",
+          "flat": 63.9875,
+          "cheapest_hours": -6.7935
+        },
+        {
+          "month": "2025-07",
+          "flat": 87.7952,
+          "cheapest_hours": 39.7406
+        },
+        {
+          "month": "2025-08",
+          "flat": 76.9903,
+          "cheapest_hours": 16.9596
+        },
+        {
+          "month": "2025-09",
+          "flat": 83.5111,
+          "cheapest_hours": 30.1328
+        },
+        {
+          "month": "2025-10",
+          "flat": 84.5074,
+          "cheapest_hours": 51.2677
+        },
+        {
+          "month": "2025-11",
+          "flat": 101.8823,
+          "cheapest_hours": 71.2637
+        },
+        {
+          "month": "2025-12",
+          "flat": 93.4702,
+          "cheapest_hours": 67.8897
+        },
+        {
+          "month": "2026-01",
+          "flat": 110.0913,
+          "cheapest_hours": 83.891
+        },
+        {
+          "month": "2026-02",
+          "flat": 96.5771,
+          "cheapest_hours": 72.325
+        },
+        {
+          "month": "2026-03",
+          "flat": 99.2475,
+          "cheapest_hours": 33.0523
+        },
+        {
+          "month": "2026-04",
+          "flat": 78.5162,
+          "cheapest_hours": -9.1793
+        },
+        {
+          "month": "2026-05",
+          "flat": 97.5366,
+          "cheapest_hours": 12.66
+        },
+        {
+          "month": "2026-06",
+          "flat": 109.5166,
+          "cheapest_hours": 35.4179
+        },
+        {
+          "month": "2026-07",
+          "flat": 105.4474,
+          "cheapest_hours": 23.0052
+        },
+        {
+          "month": "2026-08",
+          "flat": 126.8949,
+          "cheapest_hours": 39.33
+        },
+        {
+          "month": "2026-09",
+          "flat": 144.8208,
+          "cheapest_hours": 51.2844
+        },
+        {
+          "month": "2026-10",
+          "flat": 164.0309,
+          "cheapest_hours": 101.6803
+        }
+      ],
+      "block_start_hour_share": {
+        "0": 0.0439,
+        "1": 0.1578,
+        "2": 0.0535,
+        "3": 0.0261,
+        "4": 0.0137,
+        "10": 0.0247,
+        "11": 0.2332,
+        "12": 0.3567,
+        "13": 0.0494,
+        "20": 0.0357
+      }
+    },
+    "battery_by_factor": {
+      "wind": [
+        {
+          "bin": "1.28 to 7.89",
+          "days": 96,
+          "perfect_eur_day": 370.1103,
+          "naive_eur_day": 328.6352,
+          "model_minus_naive": 5.9592,
+          "ci": [
+            -8.4565,
+            23.5217
+          ]
+        },
+        {
+          "bin": "7.89 to 15.2",
+          "days": 95,
+          "perfect_eur_day": 274.5329,
+          "naive_eur_day": 246.7891,
+          "model_minus_naive": -9.5896,
+          "ci": [
+            -20.8604,
+            -0.0555
+          ]
+        },
+        {
+          "bin": "15.2 to 23.2",
+          "days": 95,
+          "perfect_eur_day": 220.9351,
+          "naive_eur_day": 188.8155,
+          "model_minus_naive": -2.0108,
+          "ci": [
+            -10.1455,
+            6.2044
+          ]
+        },
+        {
+          "bin": "23.2 to 45.6",
+          "days": 96,
+          "perfect_eur_day": 177.0511,
+          "naive_eur_day": 136.0646,
+          "model_minus_naive": 6.9167,
+          "ci": [
+            -2.803,
+            16.3556
+          ]
+        }
+      ],
+      "solar": [
+        {
+          "bin": "0.467 to 3.36",
+          "days": 96,
+          "perfect_eur_day": 105.0887,
+          "naive_eur_day": 64.7827,
+          "model_minus_naive": 8.8101,
+          "ci": [
+            1.437,
+            16.3278
+          ]
+        },
+        {
+          "bin": "3.36 to 9.64",
+          "days": 95,
+          "perfect_eur_day": 213.0241,
+          "naive_eur_day": 178.6316,
+          "model_minus_naive": -0.3531,
+          "ci": [
+            -10.3621,
+            10.0265
+          ]
+        },
+        {
+          "bin": "9.64 to 14.5",
+          "days": 95,
+          "perfect_eur_day": 340.446,
+          "naive_eur_day": 303.3173,
+          "model_minus_naive": -5.5288,
+          "ci": [
+            -17.9247,
+            8.5473
+          ]
+        },
+        {
+          "bin": "14.5 to 21.9",
+          "days": 96,
+          "perfect_eur_day": 384.6749,
+          "naive_eur_day": 354.0557,
+          "model_minus_naive": -1.5931,
+          "ci": [
+            -12.5549,
+            8.9032
+          ]
+        }
+      ],
+      "temperature": [
+        {
+          "bin": "-5.87 to 6.15",
+          "days": 96,
+          "perfect_eur_day": 122.3342,
+          "naive_eur_day": 79.1418,
+          "model_minus_naive": 9.6144,
+          "ci": [
+            2.7406,
+            17.0257
+          ]
+        },
+        {
+          "bin": "6.15 to 10.9",
+          "days": 95,
+          "perfect_eur_day": 242.2256,
+          "naive_eur_day": 209.8784,
+          "model_minus_naive": 5.7164,
+          "ci": [
+            -1.284,
+            13.9192
+          ]
+        },
+        {
+          "bin": "10.9 to 17.3",
+          "days": 95,
+          "perfect_eur_day": 326.3975,
+          "naive_eur_day": 287.1692,
+          "model_minus_naive": -0.9843,
+          "ci": [
+            -17.0852,
+            16.414
+          ]
+        },
+        {
+          "bin": "17.3 to 30",
+          "days": 96,
+          "perfect_eur_day": 352.434,
+          "naive_eur_day": 324.755,
+          "model_minus_naive": -12.901,
+          "ci": [
+            -22.8554,
+            -3.3487
+          ]
+        }
+      ],
+      "by_month": [
+        {
+          "month": "2025-10",
+          "perfect_eur_day": 216.5938,
+          "naive_eur_day": 177.6564,
+          "model_minus_naive": 17.0005
+        },
+        {
+          "month": "2025-11",
+          "perfect_eur_day": 145.5542,
+          "naive_eur_day": 108.5218,
+          "model_minus_naive": 4.2837
+        },
+        {
+          "month": "2025-12",
+          "perfect_eur_day": 87.0089,
+          "naive_eur_day": 54.1663,
+          "model_minus_naive": 1.5625
+        },
+        {
+          "month": "2026-01",
+          "perfect_eur_day": 116.293,
+          "naive_eur_day": 72.0597,
+          "model_minus_naive": 11.5704
+        },
+        {
+          "month": "2026-02",
+          "perfect_eur_day": 101.3682,
+          "naive_eur_day": 65.3634,
+          "model_minus_naive": 4.9781
+        },
+        {
+          "month": "2026-03",
+          "perfect_eur_day": 313.3181,
+          "naive_eur_day": 271.0551,
+          "model_minus_naive": 12.9234
+        },
+        {
+          "month": "2026-04",
+          "perfect_eur_day": 345.3013,
+          "naive_eur_day": 314.769,
+          "model_minus_naive": 6.7014
+        },
+        {
+          "month": "2026-05",
+          "perfect_eur_day": 328.6712,
+          "naive_eur_day": 307.6817,
+          "model_minus_naive": -2.705
+        },
+        {
+          "month": "2026-06",
+          "perfect_eur_day": 374.6586,
+          "naive_eur_day": 329.532,
+          "model_minus_naive": 3.0871
+        },
+        {
+          "month": "2026-07",
+          "perfect_eur_day": 292.8096,
+          "naive_eur_day": 268.8471,
+          "model_minus_naive": -3.9704
+        },
+        {
+          "month": "2026-08",
+          "perfect_eur_day": 319.7424,
+          "naive_eur_day": 295.2797,
+          "model_minus_naive": -21.3642
+        },
+        {
+          "month": "2026-09",
+          "perfect_eur_day": 446.8131,
+          "naive_eur_day": 387.9306,
+          "model_minus_naive": -10.1899
+        },
+        {
+          "month": "2026-10",
+          "perfect_eur_day": 316.5486,
+          "naive_eur_day": 292.7429,
+          "model_minus_naive": -31.6852
+        }
+      ]
+    },
+    "anomalies": {
+      "rows": 17520,
+      "missing_residual_load_hours": 4,
+      "missing_weather_hours": 46,
+      "min_price": -499.0,
+      "min_price_time": "2026-05-01 11:00:00+00:00",
+      "max_price": 936.28,
+      "max_price_time": "2024-12-12 16:00:00+00:00",
+      "hours_near_zero": 455,
+      "share_near_zero": 0.026,
+      "negative_with_high_residual_load": {
+        "hours": 0,
+        "example": []
+      },
+      "spike_with_low_residual_load": {
+        "hours": 0,
+        "example": []
+      },
+      "hourly_jumps_above_300": 2,
+      "worst_forecast_hours": [
+        {
+          "ts": "2026-05-01 11:00:00+00:00",
+          "actual": -499.0,
+          "forecast": -47.1433,
+          "naive": -32.02,
+          "wind_gw": 1.8316,
+          "residual_gw": -8.33
+        },
+        {
+          "ts": "2026-05-01 12:00:00+00:00",
+          "actual": -474.97,
+          "forecast": -45.0764,
+          "naive": -28.93,
+          "wind_gw": 2.0826,
+          "residual_gw": -7.8037
+        },
+        {
+          "ts": "2026-09-14 17:00:00+00:00",
+          "actual": 697.31,
+          "forecast": 298.1605,
+          "naive": 230.01,
+          "wind_gw": 1.9354,
+          "residual_gw": 56.0639
+        },
+        {
+          "ts": "2026-05-02 12:00:00+00:00",
+          "actual": -86.84,
+          "forecast": -455.8656,
+          "naive": -474.97,
+          "wind_gw": 5.081,
+          "residual_gw": -8.716
+        },
+        {
+          "ts": "2026-05-02 11:00:00+00:00",
+          "actual": -130.03,
+          "forecast": -490.0861,
+          "naive": -499.0,
+          "wind_gw": 3.6906,
+          "residual_gw": -7.9484
+        },
+        {
+          "ts": "2026-04-27 12:00:00+00:00",
+          "actual": -0.16,
+          "forecast": -314.9509,
+          "naive": -413.25,
+          "wind_gw": 1.201,
+          "residual_gw": 3.577
+        },
+        {
+          "ts": "2026-04-27 11:00:00+00:00",
+          "actual": -0.83,
+          "forecast": -314.4021,
+          "naive": -413.77,
+          "wind_gw": 0.7354,
+          "residual_gw": 3.3226
+        },
+        {
+          "ts": "2026-09-22 17:00:00+00:00",
+          "actual": 596.38,
+          "forecast": 289.2057,
+          "naive": 242.98,
+          "wind_gw": 2.4845,
+          "residual_gw": 55.0408
+        },
+        {
+          "ts": "2026-06-30 18:00:00+00:00",
+          "actual": 504.77,
+          "forecast": 218.0052,
+          "naive": 284.33,
+          "wind_gw": 6.2614,
+          "residual_gw": 48.6565
+        },
+        {
+          "ts": "2026-09-15 17:00:00+00:00",
+          "actual": 303.37,
+          "forecast": 584.2656,
+          "naive": 697.31,
+          "wind_gw": 8.8822,
+          "residual_gw": 50.7728
+        },
+        {
+          "ts": "2026-06-23 18:00:00+00:00",
+          "actual": 545.51,
+          "forecast": 267.5421,
+          "naive": 271.78,
+          "wind_gw": 1.5702,
+          "residual_gw": 51.8958
+        },
+        {
+          "ts": "2026-05-01 10:00:00+00:00",
+          "actual": -318.58,
+          "forecast": -49.3102,
+          "naive": -16.25,
+          "wind_gw": 1.858,
+          "residual_gw": -8.1283
+        }
+      ],
+      "share_error_above_100": 0.0148,
+      "share_of_total_error_from_worst_1pct": 0.0748
     }
   }
 }
