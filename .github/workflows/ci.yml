@@ -9,7 +9,7 @@ jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Start Azurite (Azure Storage emulator)
         run: |
           docker run -d -p 10000:10000 mcr.microsoft.com/azure-storage/azurite:3.33.0             azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
@@ -28,7 +28,7 @@ jobs:
   secret-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: gitleaks (full history, allowlist in .gitleaks.toml)
@@ -39,7 +39,7 @@ jobs:
     # what a stranger gets from the README quick start: only the base install plus dev tools
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -51,7 +51,7 @@ jobs:
   dags:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -72,7 +72,7 @@ jobs:
       run:
         working-directory: infra
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
@@ -97,7 +97,7 @@ jobs:
       GRIDPULSE_DATA_DIR: ./data
       DBT_PROFILES_DIR: .  # relative to the dbt/ working directory
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -122,5 +122,5 @@ jobs:
   docker-api:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build -f docker/api/Dockerfile -t gridpulse-api:ci .
