@@ -1,7 +1,13 @@
 # Deploy and rollback
 
-Status: the workflow in `.github/workflows/infra.yml` is written but has **never run**, because it
-needs your Azure subscription. CI (`ci.yml`) already runs `terraform fmt` and `validate` without credentials.
+Status (verified 2026-10-20): `.github/workflows/infra.yml` has run for real against the Azure for Students
+subscription using OIDC (no stored secret): a `terraform plan` on a pull request, and a manual
+`workflow_dispatch` with `action=apply` from `main` (plan job, then apply job in the `azure` environment).
+Both reported "No changes" because the infrastructure had already been applied from a laptop. CI (`ci.yml`)
+also runs `terraform fmt` and `validate` without credentials.
+
+Not exercised yet: an apply that actually changes something through CI, and approval gating (GitHub's free
+plan cannot require reviewers on environments in private repositories).
 
 ## One-time Azure and GitHub setup (you do this)
 1. Finish `docs/azure-setup.md` (account, budget, state storage).
