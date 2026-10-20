@@ -532,7 +532,7 @@ battery (or any flexible electricity user) earn or save more money than a very s
 
 ## What decides the price
 * **Wind and sun.** Every extra gigawatt of wind or solar lowers the price by about
-  {abs(eff["wind_gw"]["effect"]):.0f} to {abs(eff["solar_gw"]["effect"]):.0f} EUR per MWh. Wind and solar explain far more of the price than the
+  {abs(eff["wind_gw"]["effect"]):.1f} to {abs(eff["solar_gw"]["effect"]):.1f} EUR per MWh. Wind and solar explain far more of the price than the
   hour of the day or the temperature.
 * **A sunny weekend midday** is the cheapest time ({sc["Sunny weekend midday"]["mean_price"]:.0f} EUR/MWh on average, negative half the time).
 * **A calm winter evening** is the most expensive ({sc["Calm winter evening"]["mean_price"]:.0f} EUR/MWh on average).
@@ -550,7 +550,7 @@ battery (or any flexible electricity user) earn or save more money than a very s
 ## When to trust the forecast
 * **More:** when the weather changes from yesterday, in spring, on sunny or windy days.
 * **Less:** in winter, when the weather is the same as yesterday, and the day after an extreme
-  price. Rare price spikes are usually under-predicted by about half.
+  price. On the {fa["anomalies"]["spike_hours_in_test"]} hours above 300 EUR/MWh the model averaged {fa["anomalies"]["spike_mean_forecast"]:.0f} against an actual {fa["anomalies"]["spike_mean_actual"]:.0f}.
 
 ## What this project is not
 A personal portfolio project on open data. It is not trading or investment advice; it uses

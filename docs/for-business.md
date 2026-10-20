@@ -18,7 +18,7 @@ battery (or any flexible electricity user) earn or save more money than a very s
 
 ## What decides the price
 * **Wind and sun.** Every extra gigawatt of wind or solar lowers the price by about
-  3 to 3 EUR per MWh. Wind and solar explain far more of the price than the
+  3.0 to 3.3 EUR per MWh. Wind and solar explain far more of the price than the
   hour of the day or the temperature.
 * **A sunny weekend midday** is the cheapest time (19 EUR/MWh on average, negative half the time).
 * **A calm winter evening** is the most expensive (165 EUR/MWh on average).
@@ -36,7 +36,7 @@ battery (or any flexible electricity user) earn or save more money than a very s
 ## When to trust the forecast
 * **More:** when the weather changes from yesterday, in spring, on sunny or windy days.
 * **Less:** in winter, when the weather is the same as yesterday, and the day after an extreme
-  price. Rare price spikes are usually under-predicted by about half.
+  price. On the 57 hours above 300 EUR/MWh the model averaged 261 against an actual 388.
 
 ## What this project is not
 A personal portfolio project on open data. It is not trading or investment advice; it uses

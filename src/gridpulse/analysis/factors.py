@@ -425,6 +425,9 @@ def anomalies(ff: pd.DataFrame, df: pd.DataFrame) -> dict:
             }
             for r in worst.itertuples()
         ],
+        "spike_hours_in_test": int((f["actual"] > 300).sum()),
+        "spike_mean_actual": float(f.loc[f["actual"] > 300, "actual"].mean()),
+        "spike_mean_forecast": float(f.loc[f["actual"] > 300, "lgbm_weather"].mean()),
         "share_error_above_100": float((f["err"] > 100).mean()),
         "share_of_total_error_from_worst_1pct": float(
             f["err"].nlargest(max(1, int(0.01 * len(f)))).sum() / f["err"].sum()
