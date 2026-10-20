@@ -22,6 +22,10 @@ Label it as a personal project. Do not imply professional Data Engineering exper
   solar sells at 54% of the average price (26% in spring), flexible load can cut energy cost by
   56% by running in the cheapest four hours, and the forecast helps most when the weather changes
   from yesterday (gain 34%) and least in winter (6%, not significant).
+- Scheduled the pipeline in the cloud: daily ingest, dbt tests, next-day forecast and shadow-log
+  scoring, plus a weekly retrain gated on beating the naive baseline, as GitHub Actions workflows
+  with OIDC to Azure (no stored secrets), a data lake with a persistent state container, and
+  Terraform for the infrastructure; a bulk `COPY` load cut a full reload from 25+ minutes to about 3.
 - Served forecasts via FastAPI (API-key auth, rate limiting) with Prometheus metrics, Grafana and
   alert rules; load-tested (1000 requests, p95 829 ms) and ran a documented failure drill.
 - Deployed Azure infrastructure with Terraform (ADLS Gen2, Key Vault, Log Analytics, budget alerts, remote state

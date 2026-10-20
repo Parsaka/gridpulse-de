@@ -63,7 +63,8 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
   a command I can run locally.
 
 ## Not done, said plainly
-- Only the Azure storage, Key Vault, logging and budget are deployed (Terraform, Azure for Students). Airflow, PostgreSQL and the API still run locally; nothing runs in the cloud on a schedule.
+- In Azure: storage (bronze and state), Key Vault, logging and budget (Terraform, Azure for Students). The pipeline runs on a schedule in GitHub Actions against that storage; Airflow, the API and a long-lived Postgres are not hosted anywhere (the cloud jobs use a throw-away Postgres).
+- The shadow log started on 2026-10-21, so scored forecast hours accumulate day by day; it is too early for a verdict.
 - Power BI: verified in Desktop with real data on all five pages and the numbers match the analysis
   (screenshots in docs/powerbi.md). Publishing to the Power BI service is not done (needs an
   account).
