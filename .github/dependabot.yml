@@ -17,6 +17,8 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "actions/download-artifact"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "actions/upload-artifact"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: "/docker/api"
     schedule: {interval: weekly}
@@ -27,9 +29,9 @@ updates:
     directory: "/docker/airflow"
     schedule: {interval: weekly}
     ignore:
-      # Airflow 3 is a breaking migration; the dags CI job tests 2.10 only
+      # The dags CI job installs Airflow 2.10.5 with its constraints file and never builds this image,
+      # so any base-image bump is untested; change image and CI constraints together, by hand.
       - dependency-name: "apache/airflow"
-        update-types: ["version-update:semver-major"]
   - package-ecosystem: terraform
     directory: "/infra"
     schedule: {interval: weekly}
