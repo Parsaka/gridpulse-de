@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 
+PURPLE = "#7c3aed"
 BLUE, GREY, TEAL, AMBER, SLATE, RED = (
     "#2563eb",
     "#6b7280",
@@ -148,6 +149,7 @@ def _skill(res: dict) -> go.Figure:
     items = [
         ("same hour last week", sk["models"]["naive_168h"], GREY),
         ("same hour yesterday", sk["baseline"], GREY),
+        ("4-week average by hour", sk["models"]["profile_28d"], PURPLE),
         ("model without weather", sk["models"]["lgbm_calendar"], TEAL),
         ("model with observed weather", sk["models"]["lgbm_weather"], BLUE),
     ]
@@ -250,10 +252,53 @@ def _explorer(wf: pd.DataFrame) -> go.Figure:
     return fig
 
 
+def _cumulative(res: dict) -> go.Figure:
+    cu = res["battery"]["cumulative"]
+    fig = go.Figure()
+    for k, name, col in (
+        ("perfect", "perfect foresight", AMBER),
+        ("profile_28d", "4-week average by hour", PURPLE),
+        ("lgbm_weather", "weather model", BLUE),
+        ("naive_24h", "same hour yesterday", GREY),
+    ):
+        fig.add_scatter(
+            x=cu["days"], y=cu[k], mode="lines", name=name, line={"color": col, "width": 2.5}
+        )
+    fig.update_layout(
+        title="Cumulative revenue of a 1 MW / 2 MWh battery", yaxis={"title": "EUR per MW"}
+    )
+    return fig
+
+
+def _sizes(res: dict) -> go.Figure:
+    sz = res["battery"]["sizes"]
+    fig = go.Figure()
+    for k, name, col in (
+        ("naive_24h", "same hour yesterday", GREY),
+        ("profile_28d", "4-week average by hour", PURPLE),
+        ("lgbm_weather", "weather model", BLUE),
+        ("perfect", "perfect foresight", AMBER),
+    ):
+        fig.add_bar(
+            x=[f"{r['duration_h']:.0f} h" for r in sz],
+            y=[r[k] for r in sz],
+            name=name,
+            marker_color=col,
+        )
+    fig.update_layout(
+        title="Longer batteries earn more, and the forecast starts to matter",
+        yaxis={"title": "EUR per MW per year"},
+        xaxis={"title": "battery duration at 1 MW"},
+        barmode="group",
+    )
+    return fig
+
+
 def _battery(res: dict) -> go.Figure:
     st = res["battery"]["strategies"]
     order = [
         ("perfect", "perfect foresight", AMBER),
+        ("profile_28d", "4-week average by hour", PURPLE),
         ("lgbm_weather", "weather model", BLUE),
         ("lgbm_weather_noise50", "model, 50% weather noise", "#60a5fa"),
         ("lgbm_weather_noise100", "model, 100% weather noise", "#93c5fd"),
@@ -315,6 +360,10 @@ def build_dashboard(res: dict, df: pd.DataFrame, wf: pd.DataFrame, path: str | P
             f"battery revenue vs yesterday, interval {bat['ci'][0]:+,.0f} to {bat['ci'][1]:+,.0f}",
         ),
         (
+            f"{res['battery']['differences_per_year']['profile_28d_minus_naive_24h']['mean']:+,.0f} EUR/MW/yr",
+            "a free 4-week average by hour vs yesterday: it beats the model too",
+        ),
+        (
             f"+{pa['premium_eur_mwh']:.0f} EUR/MWh",
             "price premium Aug-Oct 2026 vs 2025 at equal residual load",
         ),
@@ -331,6 +380,8 @@ def build_dashboard(res: dict, df: pd.DataFrame, wf: pd.DataFrame, path: str | P
         _skill(res),
         _explorer(wf),
         _battery(res),
+        _cumulative(res),
+        _sizes(res),
     ]
     notes = [
         "Monthly average price with the number of negative and spike hours.",
@@ -339,7 +390,9 @@ def build_dashboard(res: dict, df: pd.DataFrame, wf: pd.DataFrame, path: str | P
         "Same weather-driven surplus, but fewer negative prices in 2026: the market absorbs surplus better (cause not identified here).",
         "Walk-forward: every month predicted by models trained only on earlier data. The weather model uses OBSERVED weather as a stand-in for a forecast, so this is an upper bound.",
         "Actual versus the weather model and yesterday's price, with the model's 10-90% interval (which is too narrow: about 70% coverage).",
-        "A battery scheduled from each forecast and paid at actual prices. A lower error does not automatically mean higher revenue.",
+        "A battery scheduled from each forecast and paid at actual prices. A lower error does not automatically mean higher revenue: a plain 4-week average by hour earns more than the model at 2 MWh.",
+        "Same strategies over time: the lines separate in the volatile spring and autumn weeks.",
+        "Battery duration changes the answer: the model only pulls clearly ahead of yesterday at 4 h, where the free average keeps up with it.",
     ]
     body = "".join(
         f"<section>{_html(f, i == 0)}<p>{n}</p></section>"

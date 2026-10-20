@@ -37,6 +37,14 @@ def render(res: dict) -> str:
     best_regime = max(fc["by_regime"], key=lambda r: 1 - r["mae_lgbm_weather"] / r["mae_naive_24h"])
     spike = next(r for r in fc["by_regime"] if r["regime"].startswith("spike"))
     mp = price["monthly_premium"]
+    prof = sk["profile_28d"]
+    pn = bat["differences_per_year"]["profile_28d_minus_naive_24h"]
+    pw = bat["differences_per_year"]["profile_28d_minus_lgbm_weather"]
+    rk = bat["ranking"]
+    sizes = bat["sizes"]
+    big = max(sizes, key=lambda r: r["duration_h"])
+    conc = bat["concentration"]
+    surplus = price["curve"][0]
     n_months = len(fc["monthly"])
     n_better = sum(1 for r in fc["monthly"] if r["diff"] < 0)
     n_sig = sum(1 for r in fc["monthly"] if r["diff_ci"][1] < 0)
@@ -68,13 +76,16 @@ Four sub-questions follow from it, each answered below with one method:
 |---|---|---|
 | Statistically better? | **Yes.** Mean absolute error {w["mae"]:.1f} vs {base["mae"]:.1f} EUR/MWh, {_pct(w["skill_vs_baseline"])} lower | 95% interval {_pct(w["skill_ci"][0])} to {_pct(w["skill_ci"][1])}; better in {n_better} of {n_months} months |
 | Economically better? | **No measurable difference.** Battery revenue {d["mean"]:+,.0f} EUR/MW/year vs the naive forecast | interval {_ci(d["ci"])}, spans zero |
-| Why not? | The naive forecast already earns {_pct(st["naive_24h"]["capture_of_perfect"])} of the perfect-foresight ceiling, and the model stays weak in spikes (a likely, untested explanation) | Sections 3 and 4 |
+| A free alternative? | **Yes, and it wins.** A plain average of the last 4 weeks by hour of day earns {pn["mean"]:+,.0f} EUR/MW/year more than yesterday's price and {pw["mean"]:+,.0f} more than the model | intervals {_ci(pn["ci"])} and {_ci(pw["ci"])}; its MAE is *worse* ({prof["mae"]:.1f}) |
+| Does battery size change it? | **Yes.** At {sizes[0]["duration_h"]:.0f} h it is no better ({sizes[0]["model_minus_naive"]:+,.0f}, interval {_ci(sizes[0]["model_minus_naive_ci"])}), at {big["duration_h"]:.0f} h it wins ({big["model_minus_naive"]:+,.0f}, interval {_ci(big["model_minus_naive_ci"])}) | Section 4 |
+| Why not at 2 h? | Dispatch needs the ranking of hours, and the model does not rank the expensive hours better than yesterday ({_pct(rk["lgbm_weather"]["top3_hit_rate"])} vs {_pct(rk["naive_24h"]["top3_hit_rate"])} top-3 hit rate); yesterday already earns {_pct(st["naive_24h"]["capture_of_perfect"])} of the ceiling | Section 4 |
 | Is the model well calibrated? | **No.** The nominal 80% interval covers {_pct(iv["coverage"])} | Section 3 |
 | Caveat that matters most | The weather model is fed *observed* weather, i.e. a perfect weather forecast. It is an upper bound | Section 3, noise test |
 
-The honest conclusion: the project's headline accuracy gain is real, but on this evidence it is
-not a reason to run a forecasting stack for a 1 MW battery. The cheap forecast is already
-{_pct(st["naive_24h"]["capture_of_perfect"])} as good as knowing tomorrow's prices exactly.
+The honest conclusion: the accuracy gain is real, but for a 2 MWh battery it buys nothing, and a free
+4-week average beats both yesterday and the model. The forecast only starts to pay for longer storage,
+and even there the free average keeps up. The most useful finding is about the yardstick: accuracy
+and decision value are different things.
 
 ## 1. The market moved: same conditions, much higher prices
 
@@ -90,6 +101,10 @@ do not explain it. Over a full year the gap is smaller ({yy["premium_eur_mwh"]:+
 {", ".join(f"{r['month']}: {r['premium']:+.0f}" for r in mp)} EUR/MWh (April to September).
 
 ![Same residual load, higher price]({FIG}/02_same_residual_load_higher_price.png)
+
+The gap is not uniform. In hours with strongly negative residual load (the lowest bin of the curve,
+below {surplus["hi"]:.0f} GW) prices sit near zero in both years (median {surplus["median_a"]:.2f} in 2025 and
+{surplus["median_b"]:.2f} in 2026): the premium lives in the hours where fossil plants set the price.
 
 This pattern points to the fuel and carbon price level, which the platform does not observe.
 **This is a statement about what is *not* explained by load and renewables, not a measured cause.**
@@ -138,6 +153,7 @@ change from the same hour yesterday. Result tables are over {fc["skill"]["n_hour
 |---|---|---|
 | Same hour last week | {wk["mae"]:.1f} | {_pct(wk["skill_vs_baseline"])} ({_pct(wk["skill_ci"][0])} to {_pct(wk["skill_ci"][1])}) |
 | **Same hour yesterday (baseline)** | **{base["mae"]:.1f}** | |
+| 4-week average by hour (no model) | {prof["mae"]:.1f} | {_pct(prof["skill_vs_baseline"], 1)} ({_pct(prof["skill_ci"][0], 1)} to {_pct(prof["skill_ci"][1], 1)}) |
 | Model without weather | {cal["mae"]:.1f} | {_pct(cal["skill_vs_baseline"], 1)} ({_pct(cal["skill_ci"][0], 1)} to {_pct(cal["skill_ci"][1], 1)}) |
 | Model with observed weather | **{w["mae"]:.1f}** | **{_pct(w["skill_vs_baseline"])}** ({_pct(w["skill_ci"][0])} to {_pct(w["skill_ci"][1])}) |
 
@@ -161,7 +177,9 @@ at all. The real-world gain therefore lies between those numbers and the headlin
 
 ![Error structure]({FIG}/07_error_structure.png)
 
-**Where it wins and loses.** The relative gain is largest in the {best_regime["regime"]} price
+**Where it wins and loses.** (Regimes are defined by the realised price, so these splits condition on
+the outcome: extreme prices look worse partly by construction. Read them as a description of where
+errors sit, not as a forecastable risk.) The relative gain is largest in the {best_regime["regime"]} price
 regime ({_pct(1 - best_regime["mae_lgbm_weather"] / best_regime["mae_naive_24h"])} lower error). In
 spikes above 300 EUR/MWh the model still misses by {spike["mae_lgbm_weather"]:.0f} EUR/MWh on
 average ({spike["n"]} hours): it improves on the baseline but remains unreliable exactly where it
@@ -171,7 +189,8 @@ would matter.
 
 **Uncertainty is understated.** The model's 10 to 90% interval is meant to cover 80% of hours; it
 covers {_pct(iv["coverage"])}. The worst regime is {worst["regime"]} ({_pct(worst["coverage"])},
-{worst["n"]} hours). The model is too confident, and more so when it matters.
+{worst["n"]} hours). The model is too confident; the regime split conditions on the realised price, so its low coverage in
+spikes is partly by construction, but the overall 70% is not.
 
 ![Interval coverage]({FIG}/10_interval_coverage.png)
 
@@ -179,31 +198,70 @@ covers {_pct(iv["coverage"])}. The worst regime is {worst["regime"]} ({_pct(wors
 
 Setup: a 1 MW / 2 MWh battery, round-trip efficiency
 {_pct(bat["parameters"]["round_trip_efficiency"])}, {bat["parameters"]["throughput_cost_eur_per_mwh"]:.0f} EUR/MWh
-degradation cost, one cycle per day on the day-ahead market, scheduled by exact dynamic programming
+degradation cost, one cycle per day on the day-ahead market, scheduled by an exact linear programme
 from each forecast and paid at the **actual** price. Perfect foresight is the ceiling.
 
 ![Battery value]({FIG}/09_battery_value.png)
 
 | Strategy | EUR/MW/year | Share of perfect foresight |
 |---|---|---|
-{chr(10).join(f"| {k} | {v['eur_per_mw_year']:,.0f} ({v['ci_per_year'][0]:,.0f} to {v['ci_per_year'][1]:,.0f}) | {_pct(v['capture_of_perfect'])} |" for k, v in st.items())}
+{chr(10).join(f"| {LABELS.get(k, k)} | {v['eur_per_mw_year']:,.0f} ({v['ci_per_year'][0]:,.0f} to {v['ci_per_year'][1]:,.0f}) | {_pct(v['capture_of_perfect'])} |" for k, v in st.items())}
 
 Over {bat["n_days"]} days the weather model earns {d["mean"]:+,.0f} EUR/MW/year more than yesterday's
 price (interval {_ci(d["ci"])}), and the model without weather {dcal["mean"]:+,.0f}
 ({_ci(dcal["ci"])}). **A {_pct(w["skill_vs_baseline"])} lower forecast error does not move battery
-revenue.** The naive forecast already captures {_pct(st["naive_24h"]["capture_of_perfect"])}
-of the achievable value because the daily shape (cheap midday, expensive evening) repeats. A likely
-second reason (not tested separately): dispatch depends on the *ranking* of hours within a day, and
-the error reduction does not necessarily improve that ranking. With noisy weather the model falls clearly *below* the naive
-forecast ({st["lgbm_weather_noise50"]["eur_per_mw_year"]:,.0f} EUR/MW/year at 50% noise).
+revenue at 2 MWh.** With noisy weather the model falls clearly *below* the naive forecast
+({st["lgbm_weather_noise50"]["eur_per_mw_year"]:,.0f} EUR/MW/year at 50% noise).
+
+### The cheapest forecast wins
+
+A plain average of the last 4 weeks, by hour of day, needs no model and no weather. Its error is
+*larger* than yesterday's ({prof["mae"]:.1f} against {base["mae"]:.1f} EUR/MWh) but it earns
+{pn["mean"]:+,.0f} EUR/MW/year more than yesterday's price (interval {_ci(pn["ci"])}) and
+{pw["mean"]:+,.0f} more than the weather model (interval {_ci(pw["ci"])}). A battery needs the *ranking* of
+hours within a day, not the price level. Consistent with that, the average puts {_pct(rk["profile_28d"]["top3_hit_rate"])}
+of each day's three most expensive hours in its own top three, against
+{_pct(rk["lgbm_weather"]["top3_hit_rate"])} for the weather model and {_pct(rk["naive_24h"]["top3_hit_rate"])} for yesterday
+(mean within-day rank correlation {rk["profile_28d"]["spearman"]:.2f}, {rk["lgbm_weather"]["spearman"]:.2f} and
+{rk["naive_24h"]["spearman"]:.2f}). The model removes level error that the schedule does not use.
+This is an explanation consistent with the data, not a proven mechanism.
+
+![Cumulative revenue]({FIG}/11_cumulative_revenue.png)
+
+Revenue is lumpy: the best {conc["top10pct_days"]} days earn {_pct(conc["top10pct_share_of_perfect_revenue"])} of the
+perfect-foresight total, and the weather model beats yesterday on only
+{_pct(conc["model_beats_naive_share_of_days"])} of days, with gains ({conc["sum_of_model_gains_eur"]:,.0f} EUR) and
+losses ({conc["sum_of_model_losses_eur"]:,.0f} EUR) almost cancelling over the period.
+
+### Does battery size change the answer?
+
+![Battery size]({FIG}/12_battery_size.png)
+
+Yes. Holding power at 1 MW and varying capacity:
+
+| Duration | Yesterday | 4-week average | Weather model | Perfect | Model minus yesterday |
+|---|---|---|---|---|---|
+{chr(10).join(f"| {r['duration_h']:.0f} h | {r['naive_24h']:,.0f} | {r['profile_28d']:,.0f} | {r['lgbm_weather']:,.0f} | {r['perfect']:,.0f} | {r['model_minus_naive']:+,.0f} ({_ci(r['model_minus_naive_ci'])}) |" for r in sizes)}
+
+The longer the storage, the more hours there are to rank and the more a good forecast is worth. At
+{big["duration_h"]:.0f} h the model is clearly better than yesterday, but the free 4-week average is as good
+as the model ({big["profile_28d"]:,.0f} against {big["lgbm_weather"]:,.0f}). The 2 MWh case used above is one
+point on this curve.
+
+![Day types]({FIG}/13_day_types.png)
+
+By kind of day (exploratory, six overlapping groups, no correction for multiple comparisons) there
+is no group where the model's advantage over yesterday is clear at 2 MWh.
 
 ## What this means
 
 * The forecasting work is sound and honestly measured: a {_pct(w["skill_vs_baseline"])} lower error
   than the obvious benchmark, over {n_months} strictly out-of-sample months.
-* For a small day-ahead battery operator the same work is not worth much: the benchmark is
-  already close to the ceiling. The value would have to come from elsewhere (intraday trading,
-  balancing markets, larger spreads, or better spike detection).
+* For a short (2 MWh per MW) day-ahead battery the model is not worth running: a free 4-week
+  average earns more. Its value appears for longer storage ({big["duration_h"]:.0f} h), where it matches the
+  free average, so even there the simple option is the benchmark to beat.
+* Accuracy is the wrong yardstick for dispatch: the forecast with the worst error earned the most
+  among the three practical options. Evaluate forecasts by the decision they feed.
 * The market itself is the larger story: prices at equal physical conditions are
   {pa["premium_eur_mwh"]:.0f} EUR/MWh higher, negative prices are less likely, and spikes are
   concentrated in dark, low-wind evenings.
@@ -217,6 +275,10 @@ forecast ({st["lgbm_weather_noise50"]["eur_per_mw_year"]:,.0f} EUR/MW/year at 50
 * The price premium is a regression residual, not a causal estimate; fuel and carbon prices are not
   in the data.
 * Quantile intervals are not conformally calibrated; coverage is reported, not fixed.
+* The battery bootstrap resamples days independently; day-to-day dependence is ignored. The size
+  and day-type comparisons are exploratory, with no multiplicity correction.
+* The dispatch model is an exact linear programme under stated physics (no ramp limits, fixed
+  efficiency, no price impact). Perfect-foresight revenue is a ceiling, not an expectation.
 * Past results; not trading or investment advice.
 
 ## Reproduce
@@ -242,6 +304,7 @@ def write_report(res: dict, path: str | Path) -> Path:
 LABELS = {
     "perfect": "perfect foresight",
     "naive_24h": "same hour yesterday",
+    "profile_28d": "4-week average by hour",
     "lgbm_calendar": "model without weather",
     "lgbm_weather": "model with observed weather",
     "lgbm_weather_noise25": "model, 25% weather noise",

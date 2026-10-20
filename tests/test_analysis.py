@@ -83,23 +83,40 @@ def test_spikes_and_negative_summaries_count_hours():
 
 
 def test_plan_charges_cheap_and_discharges_expensive():
+    pytest.importorskip("scipy")
     prices = np.array([100.0] * 6 + [20.0, 20.0] + [100.0] * 8 + [200.0, 200.0] + [100.0] * 6)
-    actions = plan_day(prices)
-    assert actions[6:8].tolist() == [1, 1]
-    assert actions[16:18].tolist() == [-1, -1]
-    assert actions.sum() == 0  # ends empty
+    charge, discharge = plan_day(prices)
+    assert charge[6:8].sum() > 1.5 and discharge[16:18].sum() > 1.5
+    assert discharge[:16].sum() < 1e-6  # nothing is sold before the evening peak
+    e = Battery().eff_one_way
+    assert charge.sum() * e == pytest.approx(discharge.sum() / e)  # ends empty
+
+
+def test_closed_form_profit_for_one_cycle():
+    pytest.importorskip("scipy")
+    bat = Battery(power_mw=1.0, capacity_mwh=2.0, round_trip_eff=0.81, throughput_cost=3.0)
+    prices = np.r_[
+        np.full(2, 10.0), np.full(20, 250.0), np.full(2, 300.0)
+    ]  # 250: no profitable trade
+    plan = plan_day(prices, bat)
+    stored = 2 * 0.9  # two hours at 1 MW grid power, 90% one-way efficiency
+    sold = stored * 0.9
+    expected = 300 * sold - 10 * 2 - 3 * sold
+    assert realised_profit(plan, prices, bat) == pytest.approx(expected, rel=1e-6)
 
 
 def test_flat_prices_mean_no_trading_and_losses_are_not_free():
+    pytest.importorskip("scipy")
     prices = np.full(24, 80.0)
-    assert (plan_day(prices) == 0).all()
+    charge, discharge = plan_day(prices)
+    assert charge.sum() + discharge.sum() < 1e-6
     # a forced round trip at flat prices loses money (efficiency and degradation)
-    forced = np.zeros(24, dtype=int)
-    forced[0], forced[1] = 1, -1
+    forced = (np.eye(24)[0], np.eye(24)[1] * Battery().eff_one_way ** 2)
     assert realised_profit(forced, prices) < 0
 
 
 def test_perfect_foresight_is_an_upper_bound_and_noise_lowers_value():
+    pytest.importorskip("scipy")
     rng = np.random.default_rng(0)
     ts = pd.date_range("2026-01-01", periods=24 * 40, freq="h", tz="Europe/Berlin").tz_convert(
         "UTC"
@@ -125,12 +142,15 @@ def test_perfect_foresight_is_an_upper_bound_and_noise_lowers_value():
     assert 0.5 < res["good"]["capture_of_perfect"] <= 1.0
 
 
-def test_battery_capacity_limits_the_cycle():
+def test_battery_respects_power_and_capacity():
+    pytest.importorskip("scipy")
     bat = Battery(power_mw=1.0, capacity_mwh=2.0)
     prices = np.r_[np.full(4, 10.0), np.full(4, 300.0), np.full(16, 100.0)]
-    actions = plan_day(prices, bat)
-    soc = np.cumsum(actions)
-    assert soc.max() <= 2 and soc.min() >= 0
+    charge, discharge = plan_day(prices, bat)
+    e = bat.eff_one_way
+    soc = np.cumsum(charge * e - discharge / e)
+    assert soc.max() <= 2 + 1e-6 and soc.min() >= -1e-6
+    assert charge.max() <= 1 + 1e-6 and discharge.max() <= 1 + 1e-6
 
 
 # ----------------------------------------------------------------------------- forecast errors

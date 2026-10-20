@@ -2,10 +2,10 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
   "name": "k_cap",
   "position": {
-    "x": 960,
+    "x": 1016,
     "y": 150,
     "z": 0,
-    "width": 296,
+    "width": 240,
     "height": 100
   },
   "visual": {
@@ -47,7 +47,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Naive schedule vs perfect foresight'"
+                  "Value": "'Naive vs perfect foresight'"
                 }
               }
             }

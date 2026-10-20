@@ -294,6 +294,12 @@ write(
                 "Yearly revenue per MW of the weather-model schedule minus the same-hour-yesterday schedule, EUR/MW/year. The 95% interval spans zero.",
             ),
             (
+                "Battery 4-Week Average vs Naive",
+                f'CALCULATE(SUM({BAT}[eur_per_mw_year]), {BAT}[strategy] = "profile_28d") - CALCULATE(SUM({BAT}[eur_per_mw_year]), {BAT}[strategy] = "naive_24h")',
+                F0,
+                "Yearly revenue per MW of scheduling from a plain 4-week average by hour minus the same-hour-yesterday schedule, EUR/MW/year.",
+            ),
+            (
                 "Naive Capture of Perfect",
                 f'CALCULATE(SUM({BAT}[capture_of_perfect]), {BAT}[strategy] = "naive_24h")',
                 PCT,
