@@ -41,6 +41,13 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "bronze" {
   storage_account_id = azurerm_storage_account.lake.id
 }
 
+# Data-plane access for the administrator (Owner alone cannot read or write blobs).
+resource "azurerm_role_assignment" "lake_writer" {
+  scope                = azurerm_storage_account.lake.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = var.admin_principal_id
+}
+
 # ---------- Observability ----------
 
 resource "azurerm_log_analytics_workspace" "main" {
@@ -70,7 +77,7 @@ resource "azurerm_key_vault" "main" {
 resource "azurerm_role_assignment" "kv_admin" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = data.azurerm_client_config.current.object_id
+  principal_id         = var.admin_principal_id
 }
 
 # ---------- Cost guardrail ----------

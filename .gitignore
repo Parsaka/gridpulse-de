@@ -34,3 +34,5 @@ mlartifacts/
 artifacts/
 
 mlflow/
+infra/backend.hcl
+infra/tfplan*

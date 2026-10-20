@@ -5,8 +5,12 @@ variable "subscription_id" {
 
 variable "location" {
   type        = string
-  default     = "germanywestcentral"
-  description = "Azure region (Frankfurt)."
+  default     = "swedencentral"
+  description = <<-EOT
+    Azure region. The Azure for Students subscription only allows belgiumcentral, swedencentral,
+    denmarkeast, switzerlandnorth and italynorth (policy "Allowed resource deployment regions");
+    germanywestcentral is rejected there. Pay-as-you-go subscriptions can use any region.
+  EOT
 }
 
 variable "project" {
@@ -33,6 +37,16 @@ variable "budget_amount_eur" {
 variable "budget_start_date" {
   type        = string
   description = "First day of a month, RFC3339, e.g. 2026-11-01T00:00:00Z."
+}
+
+variable "admin_principal_id" {
+  type        = string
+  description = <<-EOT
+    Object ID of the human (or group) that administers the Key Vault and writes to the data lake.
+    Explicit on purpose: using "whoever runs Terraform" made the role assignments flip between
+    your laptop and the CI identity on every plan. Find yours with:
+    az ad signed-in-user show --query id -o tsv
+  EOT
 }
 
 variable "enable_postgres" {

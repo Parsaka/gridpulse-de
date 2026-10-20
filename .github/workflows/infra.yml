@@ -26,6 +26,7 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
+  TF_VAR_admin_principal_id: ${{ vars.ADMIN_PRINCIPAL_ID }}
   TF_VAR_budget_start_date: ${{ vars.BUDGET_START_DATE }}
 
 jobs:

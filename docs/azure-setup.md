@@ -25,8 +25,8 @@ Nothing here is automated on purpose: account creation and payment details must 
    PostgreSQL Flexible Server shows what is free for your account). Prices change; trust the portal.
 5. **State storage** (once, ~cents/month):
    ```bash
-   az group create -n rg-gridpulse-tfstate -l germanywestcentral
-   az storage account create -n <unique-name> -g rg-gridpulse-tfstate -l germanywestcentral \
+   az group create -n rg-gridpulse-tfstate -l swedencentral   # students: only 5 regions are allowed
+   az storage account create -n <unique-name> -g rg-gridpulse-tfstate -l swedencentral \
      --sku Standard_LRS --allow-blob-public-access false
    az storage container create --account-name <unique-name> -n tfstate --auth-mode login
    ```
