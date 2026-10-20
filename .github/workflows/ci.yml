@@ -13,7 +13,7 @@ jobs:
       - name: Start Azurite (Azure Storage emulator)
         run: |
           docker run -d -p 10000:10000 mcr.microsoft.com/azure-storage/azurite:3.33.0             azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -98,7 +98,7 @@ jobs:
       DBT_PROFILES_DIR: .  # relative to the dbt/ working directory
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
