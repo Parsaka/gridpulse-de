@@ -23,9 +23,16 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 
 ## Results (measured, 2 years of hourly data, 17,520 rows)
 - Pipeline: daily chain runs ingestion to dbt tests to forecast logging in one Airflow DAG.
-- Model, last 90 days held out: MAE 32.7 EUR/MWh with observed weather vs 36.1 for "same hour
-  yesterday" (+9.5%, but the 95% bootstrap interval is -0.9% to +18.1%, so not distinguishable from
-  zero); without weather inputs the model is clearly worse than the baseline (41.5).
+- Central question: is a public-data day-ahead forecast good enough to matter economically for a
+  battery operator? Answered in [analysis.md](analysis.md) with a 13-month walk-forward test.
+- Model, walk-forward over 9,192 out-of-sample hours: MAE 23.5 EUR/MWh with observed weather vs
+  30.3 for "same hour yesterday" (22% lower, 95% interval 18% to 26%); without weather the gain
+  is 4.9% and the interval includes zero.
+- Economic value: a 1 MW / 2 MWh battery scheduled from the model earns +153 EUR/MW/year versus the
+  naive forecast (interval -1,968 to +2,430), i.e. no measurable difference; the naive forecast
+  already reaches 86% of perfect-foresight revenue.
+- Market findings: at equal residual load, Aug-Oct 2026 prices are 70 EUR/MWh above 2025;
+  negative prices at low residual load fell from 67% to 41% of hours.
 - API on one laptop container: 1000 requests at concurrency 20, all 200, p95 829 ms.
 - Failure drill (database stopped): readiness failed in about 20 s, alert fired in about 96 s,
   service recovered without a restart.
@@ -34,8 +41,11 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - The first model lost to the naive baseline. Prices in the test period were ~48% above the
   training mean and trees cannot extrapolate levels. Predicting the change versus yesterday fixed
   most of it, chosen on validation data only.
-- The headline 9.5% uses observed weather as a stand-in for a forecast, so it is an upper bound.
-  I documented that in the model card and built a shadow log to measure real forecasts instead.
+- The headline accuracy gain uses observed weather as a stand-in for a forecast, so it is an upper
+  bound; a noise test shows it shrinks to 4% when the weather input is very noisy. A shadow log
+  measures real forecasts going forward.
+- A 22% lower error turned out to be worth nothing for a battery on the day-ahead market. Reporting
+  that, instead of only the accuracy number, was the point of asking an economic question first.
 - Drift monitoring flagged every seasonal feature until the reference window became "same season
   last year"; the remaining price-level drift is real.
 - Load testing found a real bug (NaN in JSON caused HTTP 500) that unit tests had missed.
@@ -46,4 +56,5 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - Only the Azure storage, Key Vault, logging and budget are deployed (Terraform, Azure for Students). Airflow, PostgreSQL and the API still run locally; nothing runs in the cloud on a schedule.
 - Power BI report pages are a skeleton; the model and measures are tested but the visuals are to
   be built in Desktop.
-- No gas or CO2 price inputs; accuracy claims are indicative (single test window).
+- No gas or CO2 price inputs. Quantile intervals under-cover (70% instead of 80%).
+- Battery model: day-ahead only, one cycle per day, no intraday or balancing revenue.
