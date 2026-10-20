@@ -57,6 +57,23 @@ def load_warehouse(
     pipeline.load_warehouse(since_days)
 
 
+@app.command("bootstrap-ci")
+def bootstrap_ci(n_boot: int = 4000):
+    """95% day-block bootstrap intervals for the backtest MAE and the gain over naive 24h."""
+    import json
+
+    import pandas as pd
+    from sqlalchemy import create_engine
+
+    from gridpulse.ml.uncertainty import day_block_bootstrap
+
+    engine = create_engine(get_settings().warehouse_url)
+    bt = pd.read_sql("select * from gold.price_forecast_backtest", engine, parse_dates=["ts_utc"])
+    preds = [c for c in bt.columns if c.startswith("pred_") and c != "pred_naive_24h"]
+    res = day_block_bootstrap(bt, preds, "pred_naive_24h", n_boot=n_boot)
+    typer.echo(json.dumps(res, indent=2))
+
+
 @app.command("forecast-log")
 def forecast_log():
     """Issue the next-day forecast (live weather forecast) and store it for shadow evaluation."""

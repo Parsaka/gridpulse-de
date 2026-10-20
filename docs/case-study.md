@@ -23,8 +23,9 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 
 ## Results (measured, 2 years of hourly data, 17,520 rows)
 - Pipeline: daily chain runs ingestion to dbt tests to forecast logging in one Airflow DAG.
-- Model, last 90 days held out: MAE 33.1 EUR/MWh with observed weather vs 36.1 for "same hour
-  yesterday" (+8%); without weather inputs the model is worse than the baseline (41.5).
+- Model, last 90 days held out: MAE 32.7 EUR/MWh with observed weather vs 36.1 for "same hour
+  yesterday" (+9.5%, but the 95% bootstrap interval is -0.9% to +18.1%, so not distinguishable from
+  zero); without weather inputs the model is clearly worse than the baseline (41.5).
 - API on one laptop container: 1000 requests at concurrency 20, all 200, p95 829 ms.
 - Failure drill (database stopped): readiness failed in about 20 s, alert fired in about 96 s,
   service recovered without a restart.
@@ -33,7 +34,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - The first model lost to the naive baseline. Prices in the test period were ~48% above the
   training mean and trees cannot extrapolate levels. Predicting the change versus yesterday fixed
   most of it, chosen on validation data only.
-- The headline 8% uses observed weather as a stand-in for a forecast, so it is an upper bound.
+- The headline 9.5% uses observed weather as a stand-in for a forecast, so it is an upper bound.
   I documented that in the model card and built a shadow log to measure real forecasts instead.
 - Drift monitoring flagged every seasonal feature until the reference window became "same season
   last year"; the remaining price-level drift is real.

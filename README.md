@@ -90,9 +90,11 @@ pip install -e ".[warehouse,ml]"
 gridpulse train --test-days 90      # baselines + LightGBM, logs to MLflow, writes gold.price_forecast_backtest
 ```
 
-On the last 90 days, LightGBM with weather inputs reaches MAE 33.1 vs 36.1 EUR/MWh for the
+On the last 90 days, LightGBM with weather inputs reaches MAE 32.7 vs 36.1 EUR/MWh for the
 "same hour yesterday" baseline, **but that uses observed weather as a forecast proxy and is an
-upper bound**; without weather the model is worse than the baseline. Details and limits:
+upper bound** and its gain over the baseline is not statistically distinguishable from zero (95%
+interval -0.9% to +18.1%); without weather the model is clearly worse than the baseline. Details and
+limits:
 [docs/model-card.md](docs/model-card.md).
 
 ## API and monitoring
