@@ -134,7 +134,7 @@ demo, not trading advice; see the [model card](docs/model-card.md) for its limit
 
 ## Power BI
 
-Semantic model (TMDL, 20 DAX measures, star schema over the gold tables) and a report skeleton in
+Semantic model (TMDL, 23 DAX measures, star schema over the gold tables) and a 5-page, 33-visual report (PBIR, schema-validated) in
 [powerbi/](powerbi/), with setup, page designs and limits in [docs/powerbi.md](docs/powerbi.md).
 
 ## Licence and data attribution

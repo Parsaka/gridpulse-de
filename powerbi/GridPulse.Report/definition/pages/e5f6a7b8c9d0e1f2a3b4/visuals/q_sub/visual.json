@@ -1,0 +1,35 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "q_sub",
+  "position": {
+    "x": 24,
+    "y": 84,
+    "z": 0,
+    "width": 1232,
+    "height": 56
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Walk-forward test over 13 months and 9,192 out-of-sample hours; 95% day-block bootstrap intervals. The weather model uses observed weather, so it is an upper bound.",
+                    "textStyle": {
+                      "fontSize": "11pt",
+                      "fontWeight": "normal"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "k_mae",
+  "position": {
+    "x": 336,
+    "y": 150,
+    "z": 0,
+    "width": 296,
+    "height": 100
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "walk_forward_backtest"
+                    }
+                  },
+                  "Property": "MAE LightGBM Weather"
+                }
+              },
+              "queryRef": "walk_forward_backtest.MAE LightGBM Weather",
+              "nativeQueryRef": "MAE LightGBM Weather"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'MAE with observed weather (EUR/MWh)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

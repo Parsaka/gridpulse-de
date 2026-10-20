@@ -19,7 +19,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 | ML | LightGBM against naive baselines, MLflow, shadow-mode forecast log, PSI drift | Evaluated on a chronological split, then on real forecasts going forward |
 | Serving | FastAPI, API-key auth, rate limit, Prometheus metrics, Grafana, alert rules | Fails closed, observable |
 | IaC and CI | Terraform (azurerm) validated in CI, GitHub Actions, OIDC workflow for Azure | Reproducible infrastructure; no stored cloud secrets |
-| BI | Power BI semantic model as TMDL in Git, 20 DAX measures, tested | Reviewable BI code |
+| BI | Power BI semantic model as TMDL in Git, 23 DAX measures, tested | Reviewable BI code |
 
 ## Results (measured, 2 years of hourly data, 17,520 rows)
 - Pipeline: daily chain runs ingestion to dbt tests to forecast logging in one Airflow DAG.
@@ -54,7 +54,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 
 ## Not done, said plainly
 - Only the Azure storage, Key Vault, logging and budget are deployed (Terraform, Azure for Students). Airflow, PostgreSQL and the API still run locally; nothing runs in the cloud on a schedule.
-- Power BI report pages are a skeleton; the model and measures are tested but the visuals are to
-  be built in Desktop.
+- Power BI report is generated and schema-validated but its rendering after a refresh was not
+  verified by me (needs the database credentials in Desktop).
 - No gas or CO2 price inputs. Quantile intervals under-cover (70% instead of 80%).
 - Battery model: day-ahead only, one cycle per day, no intraday or balancing revenue.

@@ -196,3 +196,20 @@ def test_committed_report_matches_committed_results():
     assert text == committed
     d = res["battery"]["differences_per_year"]["lgbm_weather_minus_naive_24h"]
     assert d["ci"][0] < 0 < d["ci"][1]  # the headline claim "no economic difference" holds
+
+
+def test_bi_tables_have_the_columns_the_power_bi_model_expects():
+    import json
+    import re
+    from pathlib import Path
+
+    from gridpulse.analysis.report import bi_tables
+
+    root = Path(__file__).resolve().parents[1]
+    res = json.loads((root / "docs/analysis/results.json").read_text(encoding="utf-8"))
+    for name, frame in bi_tables(res).items():
+        tmdl = (root / f"powerbi/GridPulse.SemanticModel/definition/tables/{name}.tmdl").read_text(
+            encoding="utf-8"
+        )
+        assert set(re.findall(r"^\tcolumn (\w+)", tmdl, re.M)) == set(frame.columns), name
+        assert len(frame) > 0

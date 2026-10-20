@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "k_load",
+  "position": {
+    "x": 960,
+    "y": 16,
+    "z": 0,
+    "width": 296,
+    "height": 90
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_market_hourly"
+                    }
+                  },
+                  "Property": "Total Load GWh"
+                }
+              },
+              "queryRef": "fct_market_hourly.Total Load GWh",
+              "nativeQueryRef": "Total Load GWh"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Total load (GWh)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

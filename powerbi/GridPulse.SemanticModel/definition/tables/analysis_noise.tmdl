@@ -1,0 +1,44 @@
+table analysis_noise
+	column label
+		dataType: string
+		summarizeBy: none
+		sourceColumn: label
+
+	column noise_pct
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: noise_pct
+
+	column mae
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: mae
+
+	column gain
+		dataType: double
+		formatString: 0.0%
+		summarizeBy: none
+		sourceColumn: gain
+
+	column gain_low
+		dataType: double
+		formatString: 0.0%
+		summarizeBy: none
+		sourceColumn: gain_low
+
+	column gain_high
+		dataType: double
+		formatString: 0.0%
+		summarizeBy: none
+		sourceColumn: gain_high
+
+	partition analysis_noise = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database(PgServer, PgDatabase),
+					Data = Source{[Schema="gold", Item="analysis_noise"]}[Data]
+				in
+					Data

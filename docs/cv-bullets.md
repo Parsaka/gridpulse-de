@@ -18,7 +18,7 @@ Label it as a personal project. Do not imply professional Data Engineering exper
   alert rules; load-tested (1000 requests, p95 829 ms) and ran a documented failure drill.
 - Deployed Azure infrastructure with Terraform (ADLS Gen2, Key Vault, Log Analytics, budget alerts, remote state
   with versioning) and verified the pipeline against the real storage account; GitHub Actions with OIDC login;
-  a Power BI semantic model in Git (TMDL, 20 DAX measures).
+  a Power BI semantic model in Git (TMDL, 23 DAX measures).
 
 **Kurzfassung (Deutsch)**
 - Datenplattform fuer den deutschen Strommarkt (SMARD, DWD, ENTSO-E): Python-Ingestion, PostgreSQL,

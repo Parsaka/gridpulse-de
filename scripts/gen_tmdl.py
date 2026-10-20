@@ -54,7 +54,8 @@ def write(rel: str, text: str) -> None:
     path.write_text(text, encoding="utf-8", newline="\n")
 
 
-MKT, WX, BT = "fct_market_hourly", "fct_weather_hourly", "price_forecast_backtest"
+MKT, WX, BT = "fct_market_hourly", "fct_weather_hourly", "walk_forward_backtest"
+BAT, NOI, MON = "analysis_battery", "analysis_noise", "analysis_monthly_skill"
 GEN = [
     "wind_onshore",
     "wind_offshore",
@@ -217,39 +218,41 @@ write(
         [
             ("ts_utc", "dateTime", "yyyy-MM-dd HH:mm"),
             ("actual", "double", F2),
-            ("pred_naive_24h", "double", F2),
-            ("pred_naive_168h", "double", F2),
-            ("pred_lgbm_calendar_lags", "double", F2),
-            ("pred_lgbm_with_weather", "double", F2),
+            ("naive_24h", "double", F2),
+            ("naive_168h", "double", F2),
+            ("lgbm_calendar", "double", F2),
+            ("lgbm_weather", "double", F2),
+            ("q10", "double", F2),
+            ("q90", "double", F2),
         ],
         measures=[
             (
                 "MAE Naive 24h",
-                mae("pred_naive_24h"),
+                mae("naive_24h"),
                 F2,
                 "Mean absolute error of the same-hour-yesterday baseline in EUR/MWh.",
             ),
             (
                 "MAE LightGBM Weather",
-                mae("pred_lgbm_with_weather"),
+                mae("lgbm_weather"),
                 F2,
                 "MAE of the LightGBM model that uses observed weather as a forecast proxy. Optimistic upper bound.",
             ),
             (
                 "MAE LightGBM Calendar",
-                mae("pred_lgbm_calendar_lags"),
+                mae("lgbm_calendar"),
                 F2,
                 "MAE of the LightGBM model without weather inputs.",
             ),
             (
                 "RMSE Naive 24h",
-                rmse("pred_naive_24h"),
+                rmse("naive_24h"),
                 F2,
                 "Root mean squared error of the same-hour-yesterday baseline.",
             ),
             (
                 "RMSE LightGBM Weather",
-                rmse("pred_lgbm_with_weather"),
+                rmse("lgbm_weather"),
                 F2,
                 "RMSE of the weather model. Optimistic upper bound.",
             ),
@@ -259,9 +262,72 @@ write(
                 PCT,
                 "Relative MAE improvement over the naive baseline. Negative means worse than the baseline.",
             ),
-            ("Backtest Hours", f"COUNTROWS({BT})", F0, "Hours in the backtest window."),
+            ("Backtest Hours", f"COUNTROWS({BT})", F0, "Hours in the walk-forward backtest."),
+            (
+                "Interval Coverage",
+                f"DIVIDE(COUNTROWS(FILTER({BT}, {BT}[actual] >= {BT}[q10] && {BT}[actual] <= {BT}[q90])), COUNTROWS({BT}))",
+                PCT,
+                "Share of hours inside the model's 10-90% interval. Nominal 80%; lower means overconfident.",
+            ),
         ],
         dt_cols=["ts_utc"],
+    ),
+)
+
+write(
+    f"tables/{BAT}.tmdl",
+    table(
+        BAT,
+        [
+            ("strategy", "string", None),
+            ("label", "string", None),
+            ("eur_per_mw_year", "double", F0),
+            ("ci_low", "double", F0),
+            ("ci_high", "double", F0),
+            ("capture_of_perfect", "double", PCT),
+        ],
+        measures=[
+            (
+                "Battery Weather Model vs Naive",
+                f'CALCULATE(SUM({BAT}[eur_per_mw_year]), {BAT}[strategy] = "lgbm_weather") - CALCULATE(SUM({BAT}[eur_per_mw_year]), {BAT}[strategy] = "naive_24h")',
+                F0,
+                "Yearly revenue per MW of the weather-model schedule minus the same-hour-yesterday schedule, EUR/MW/year. The 95% interval spans zero.",
+            ),
+            (
+                "Naive Capture of Perfect",
+                f'CALCULATE(SUM({BAT}[capture_of_perfect]), {BAT}[strategy] = "naive_24h")',
+                PCT,
+                "Revenue of the naive schedule as a share of perfect foresight.",
+            ),
+        ],
+    ),
+)
+write(
+    f"tables/{NOI}.tmdl",
+    table(
+        NOI,
+        [
+            ("label", "string", None),
+            ("noise_pct", "double", F0),
+            ("mae", "double", F2),
+            ("gain", "double", PCT),
+            ("gain_low", "double", PCT),
+            ("gain_high", "double", PCT),
+        ],
+    ),
+)
+write(
+    f"tables/{MON}.tmdl",
+    table(
+        MON,
+        [
+            ("month", "string", None),
+            ("mae_naive", "double", F2),
+            ("mae_model", "double", F2),
+            ("diff", "double", F2),
+            ("diff_low", "double", F2),
+            ("diff_high", "double", F2),
+        ],
     ),
 )
 
@@ -285,7 +351,7 @@ write(
     'expression PgDatabase = "gridpulse" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]\n'
     f"{T}lineageTag: 6f1c1b50-0a52-4a6d-9a3a-0c1d6a2f0002\n",
 )
-tables = [MKT, "dim_datetime", "dim_location", WX, BT]
+tables = [MKT, "dim_datetime", "dim_location", WX, BT, BAT, NOI, MON]
 write(
     "model.tmdl",
     "model Model\n"

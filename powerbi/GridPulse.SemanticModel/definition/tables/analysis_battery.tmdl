@@ -1,0 +1,51 @@
+table analysis_battery
+	column strategy
+		dataType: string
+		summarizeBy: none
+		sourceColumn: strategy
+
+	column label
+		dataType: string
+		summarizeBy: none
+		sourceColumn: label
+
+	column eur_per_mw_year
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: eur_per_mw_year
+
+	column ci_low
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: ci_low
+
+	column ci_high
+		dataType: double
+		formatString: #,0
+		summarizeBy: none
+		sourceColumn: ci_high
+
+	column capture_of_perfect
+		dataType: double
+		formatString: 0.0%
+		summarizeBy: none
+		sourceColumn: capture_of_perfect
+
+	measure 'Battery Weather Model vs Naive' = CALCULATE(SUM(analysis_battery[eur_per_mw_year]), analysis_battery[strategy] = "lgbm_weather") - CALCULATE(SUM(analysis_battery[eur_per_mw_year]), analysis_battery[strategy] = "naive_24h")
+		formatString: #,0
+		description: Yearly revenue per MW of the weather-model schedule minus the same-hour-yesterday schedule, EUR/MW/year. The 95% interval spans zero.
+
+	measure 'Naive Capture of Perfect' = CALCULATE(SUM(analysis_battery[capture_of_perfect]), analysis_battery[strategy] = "naive_24h")
+		formatString: 0.0%
+		description: Revenue of the naive schedule as a share of perfect foresight.
+
+	partition analysis_battery = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database(PgServer, PgDatabase),
+					Data = Source{[Schema="gold", Item="analysis_battery"]}[Data]
+				in
+					Data

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "price_by_hour",
+  "position": {
+    "x": 660,
+    "y": 16,
+    "z": 0,
+    "width": 596,
+    "height": 330
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_datetime"
+                    }
+                  },
+                  "Property": "hour_local"
+                }
+              },
+              "queryRef": "dim_datetime.hour_local",
+              "nativeQueryRef": "hour_local"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_market_hourly"
+                    }
+                  },
+                  "Property": "Avg Price"
+                }
+              },
+              "queryRef": "fct_market_hourly.Avg Price",
+              "nativeQueryRef": "Avg Price"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Average price by hour of day'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

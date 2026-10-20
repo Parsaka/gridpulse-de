@@ -6,7 +6,10 @@ ref table fct_market_hourly
 ref table dim_datetime
 ref table dim_location
 ref table fct_weather_hourly
-ref table price_forecast_backtest
+ref table walk_forward_backtest
+ref table analysis_battery
+ref table analysis_noise
+ref table analysis_monthly_skill
 
 ref expression PgServer
 ref expression PgDatabase

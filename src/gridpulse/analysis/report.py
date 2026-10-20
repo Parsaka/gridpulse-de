@@ -237,3 +237,62 @@ def write_report(res: dict, path: str | Path) -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(render(res), encoding="utf-8")
     return out
+
+
+LABELS = {
+    "perfect": "perfect foresight",
+    "naive_24h": "same hour yesterday",
+    "lgbm_calendar": "model without weather",
+    "lgbm_weather": "model with observed weather",
+    "lgbm_weather_noise25": "model, 25% weather noise",
+    "lgbm_weather_noise50": "model, 50% weather noise",
+    "lgbm_weather_noise100": "model, 100% weather noise",
+}
+
+
+def bi_tables(res: dict) -> dict:
+    """Small tables for the Power BI report (loaded into the gold schema by `gridpulse analyze`)."""
+    import pandas as pd
+
+    battery = pd.DataFrame(
+        [
+            {
+                "strategy": k,
+                "label": LABELS.get(k, k),
+                "eur_per_mw_year": v["eur_per_mw_year"],
+                "ci_low": v["ci_per_year"][0],
+                "ci_high": v["ci_per_year"][1],
+                "capture_of_perfect": v["capture_of_perfect"],
+            }
+            for k, v in res["battery"]["strategies"].items()
+        ]
+    )
+    noise = pd.DataFrame(
+        [
+            {
+                "label": n.get("label") or f"{n['noise_pct_of_std']}% noise",
+                "noise_pct": -1.0
+                if n["noise_pct_of_std"] is None
+                else float(n["noise_pct_of_std"]),
+                "mae": n["mae"],
+                "gain": n["gain"],
+                "gain_low": n["gain_ci"][0],
+                "gain_high": n["gain_ci"][1],
+            }
+            for n in res["forecast"]["noise"]
+        ]
+    )
+    monthly = pd.DataFrame(
+        [
+            {
+                "month": m["month"],
+                "mae_naive": m["mae_naive"],
+                "mae_model": m["mae_model"],
+                "diff": m["diff"],
+                "diff_low": m["diff_ci"][0],
+                "diff_high": m["diff_ci"][1],
+            }
+            for m in res["forecast"]["monthly"]
+        ]
+    )
+    return {"analysis_battery": battery, "analysis_noise": noise, "analysis_monthly_skill": monthly}

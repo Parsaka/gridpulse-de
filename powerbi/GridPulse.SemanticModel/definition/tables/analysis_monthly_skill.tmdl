@@ -1,0 +1,44 @@
+table analysis_monthly_skill
+	column month
+		dataType: string
+		summarizeBy: none
+		sourceColumn: month
+
+	column mae_naive
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: mae_naive
+
+	column mae_model
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: mae_model
+
+	column diff
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: diff
+
+	column diff_low
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: diff_low
+
+	column diff_high
+		dataType: double
+		formatString: #,0.00
+		summarizeBy: none
+		sourceColumn: diff_high
+
+	partition analysis_monthly_skill = m
+		mode: import
+		source =
+				let
+					Source = PostgreSQL.Database(PgServer, PgDatabase),
+					Data = Source{[Schema="gold", Item="analysis_monthly_skill"]}[Data]
+				in
+					Data
