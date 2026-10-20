@@ -41,8 +41,8 @@ def table(name, columns, schema="gold", measures=(), dt_cols=()):
             out.append(f"{T * 2}formatString: {fmt}\n")
         out.append(f"{T * 2}summarizeBy: none\n{T * 2}sourceColumn: {col}\n\n")
     for mname, expr, fmt, desc in measures:
-        out.append(f"{T}measure '{mname}' = {expr}\n")
-        out.append(f"{T * 2}formatString: {fmt}\n{T * 2}description: {desc}\n\n")
+        out.append(f"{T}/// {desc}\n{T}measure '{mname}' = {expr}\n")
+        out.append(f"{T * 2}formatString: {fmt}\n\n")
     out.append(f"{T}partition {name} = m\n{T * 2}mode: import\n{T * 2}source =\n")
     out.append(m_source(schema, name, list(dt_cols)))
     return "".join(out)

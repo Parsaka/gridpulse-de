@@ -36,7 +36,7 @@ battery (or any flexible electricity user) earn or save more money than a very s
 ## When to trust the forecast
 * **More:** when the weather changes from yesterday, in spring, on sunny or windy days.
 * **Less:** in winter, when the weather is the same as yesterday, and the day after an extreme
-  price. On the 57 hours above 300 EUR/MWh the model averaged 261 against an actual 388.
+  price. On the 57 hours above 300 EUR/MWh the model averaged 252 against an actual 388.
 
 ## What this project is not
 A personal portfolio project on open data. It is not trading or investment advice; it uses

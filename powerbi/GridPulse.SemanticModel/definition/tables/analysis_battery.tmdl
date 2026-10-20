@@ -33,17 +33,17 @@ table analysis_battery
 		summarizeBy: none
 		sourceColumn: capture_of_perfect
 
+	/// Yearly revenue per MW of the weather-model schedule minus the same-hour-yesterday schedule, EUR/MW/year. The 95% interval spans zero.
 	measure 'Battery Weather Model vs Naive' = CALCULATE(SUM(analysis_battery[eur_per_mw_year]), analysis_battery[strategy] = "lgbm_weather") - CALCULATE(SUM(analysis_battery[eur_per_mw_year]), analysis_battery[strategy] = "naive_24h")
 		formatString: #,0
-		description: Yearly revenue per MW of the weather-model schedule minus the same-hour-yesterday schedule, EUR/MW/year. The 95% interval spans zero.
 
+	/// Yearly revenue per MW of scheduling from a plain 4-week average by hour minus the same-hour-yesterday schedule, EUR/MW/year.
 	measure 'Battery 4-Week Average vs Naive' = CALCULATE(SUM(analysis_battery[eur_per_mw_year]), analysis_battery[strategy] = "profile_28d") - CALCULATE(SUM(analysis_battery[eur_per_mw_year]), analysis_battery[strategy] = "naive_24h")
 		formatString: #,0
-		description: Yearly revenue per MW of scheduling from a plain 4-week average by hour minus the same-hour-yesterday schedule, EUR/MW/year.
 
+	/// Revenue of the naive schedule as a share of perfect foresight.
 	measure 'Naive Capture of Perfect' = CALCULATE(SUM(analysis_battery[capture_of_perfect]), analysis_battery[strategy] = "naive_24h")
 		formatString: 0.0%
-		description: Revenue of the naive schedule as a share of perfect foresight.
 
 	partition analysis_battery = m
 		mode: import

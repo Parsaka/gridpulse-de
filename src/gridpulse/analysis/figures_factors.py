@@ -237,3 +237,45 @@ def fig_calibration(res, df, wf, path):
     )
     fig.colorbar(hb, ax=ax, label="hours (log scale)")
     return _finish(fig, path, "Axes clipped to -150 to 450 EUR/MWh. " + SOURCE)
+
+
+def fig_fuel(res, df, path):
+    fu = res["factors"].get("fuel")
+    if not fu:
+        return None
+    t = pd.DataFrame(fu["series"])
+    x = pd.to_datetime(t["month"] + "-01")
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.8), gridspec_kw={"width_ratios": [1.3, 1]})
+    a1.plot(
+        x,
+        t["level"] - t["level"].min(),
+        color=C["y26"],
+        lw=2.4,
+        marker="o",
+        label="price level at equal load (EUR/MWh)",
+    )
+    a1.set_ylabel("price level, relative to the lowest month (EUR/MWh)")
+    a1b = a1.twinx()
+    a1b.plot(
+        x, t["gas"], color=C["perfect"], lw=2.4, marker="s", label="European gas price (USD/mmbtu)"
+    )
+    a1b.set_ylabel("gas price (USD/mmbtu)")
+    a1b.grid(False)
+    h1, l1 = a1.get_legend_handles_labels()
+    h2, l2 = a1b.get_legend_handles_labels()
+    a1.legend(h1 + h2, l1 + l2, loc="upper left", fontsize=8)
+    a1.set_title("The price level follows the gas price", fontsize=11)
+    a2.scatter(t["gas"], t["level"] - t["level"].min(), color=C["y26"], zorder=3)
+    gx = np.array([t["gas"].min(), t["gas"].max()])
+    icpt = (t["level"] - t["level"].min()).mean() - fu["slope_eur_per_usd_mmbtu"] * t["gas"].mean()
+    a2.plot(gx, icpt + fu["slope_eur_per_usd_mmbtu"] * gx, color="#111827", lw=1.5)
+    a2.set_xlabel("gas price (USD/mmbtu)")
+    a2.set_ylabel("price level (EUR/MWh)")
+    a2.set_title(
+        f"{fu['slope_eur_per_usd_mmbtu']:.1f} EUR/MWh per USD/mmbtu, R2 {fu['r2']:.2f}", fontsize=11
+    )
+    note = (
+        "Month effects from price ~ hour + residual load + month. Gas: World Bank Pink Sheet (CC BY 4.0). Association, not proof. "
+        + SOURCE
+    )
+    return _finish(fig, path, note)

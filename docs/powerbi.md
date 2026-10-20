@@ -30,9 +30,8 @@ scripts/gen_tmdl.py                   regenerates the TMDL (a test fails if the 
 | Forecast vs actual | MAE cards, interval coverage, actual vs naive vs weather model, MAE by test month, caveat text |
 | Pipeline health | Freshness and row-count cards |
 
-Required caveat on the forecast page (already in the report): the weather model uses observed
-weather as a stand-in for a forecast, so its error is an optimistic upper bound (see
-[model-card.md](model-card.md)).
+Note on the forecast page: the weather model uses the weather forecast issued the day before
+(see [model-card.md](model-card.md)).
 
 ## Status and limits
 - Checked without Power BI: tests verify measure metadata, relationships, DAX column references,

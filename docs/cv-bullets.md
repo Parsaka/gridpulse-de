@@ -9,10 +9,12 @@ Label it as a personal project. Do not imply professional Data Engineering exper
 - Framed the project around one decision question (does a public-data price forecast matter
   economically for a battery operator?) and answered it with a 13-month walk-forward evaluation
   of a LightGBM day-ahead model: 22% lower error than the naive benchmark (95% bootstrap interval
-  18% to 26%), but no measurable battery-revenue difference (+128 EUR/MW/year, interval spans
-  zero) and a plain 4-week average earned more (+3,735 EUR/MW/year, interval +1,894 to +5,685):
-  accuracy is not decision value. Included a weather-noise sensitivity test, a battery-size
-  sensitivity and an exact linear-programming dispatch model.
+  17% to 26%, using archived day-before weather forecasts), but no measurable battery-revenue
+  difference (-460 EUR/MW/year, interval spans zero) and a plain 4-week average earned more (+3,735 EUR/MW/year, interval +1,894 to +5,685):
+  accuracy is not decision value. Included a battery-size sensitivity, rolling conformal calibration of the
+  prediction intervals (69% to 79% coverage) and an exact linear-programming dispatch model.
+- Showed that the gas price explains the year-on-year price gap at equal conditions (gas up from
+  11 to 23 USD/mmbtu implies about +68 EUR/MWh against +70 measured).
 - Found that prices at equal residual load rose by about 70 EUR/MWh year on year and that
   negative-price probability at low residual load fell from 67% to 41%; published the analysis,
   twenty figures, a plain-language business summary and an interactive Plotly dashboard. Added a shadow-mode log to score real forecasts.

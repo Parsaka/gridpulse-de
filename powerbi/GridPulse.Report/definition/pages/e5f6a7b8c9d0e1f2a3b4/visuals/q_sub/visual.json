@@ -18,7 +18,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Walk-forward test over 13 months and 9,192 out-of-sample hours; 95% day-block bootstrap intervals. The weather model uses observed weather, so it is an upper bound.",
+                    "value": "Walk-forward test over 13 months and 9,192 out-of-sample hours; 95% day-block bootstrap intervals. The weather input is the forecast issued the day before.",
                     "textStyle": {
                       "fontSize": "11pt",
                       "fontWeight": "normal"

@@ -137,7 +137,7 @@ def pages() -> list[tuple[str, str, list[dict]]]:
             [
                 (
                     "Walk-forward test over 13 months and 9,192 out-of-sample hours; 95% day-block bootstrap intervals. "
-                    "The weather model uses observed weather, so it is an upper bound.",
+                    "The weather input is the forecast issued the day before.",
                     "11pt",
                 )
             ],
@@ -355,10 +355,10 @@ def pages() -> list[tuple[str, str, list[dict]]]:
             396,
             260,
             [
-                ("Read this first", "12pt"),
+                ("About the weather input", "12pt"),
                 (
-                    "The weather model uses observed weather as a stand-in for a forecast, so its error is an "
-                    "optimistic upper bound. Its 80% interval covers about 70% of hours.",
+                    "The weather input is the forecast issued the day before (Open-Meteo archive). "
+                    "The 80% interval covers about 69% of hours as trained.",
                     "11pt",
                 ),
             ],

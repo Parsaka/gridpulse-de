@@ -168,7 +168,15 @@ def spikes(df: pd.DataFrame, threshold: float = 300.0) -> dict:
 
 # ----------------------------------------------------------------------------- forecast errors
 
-MODELS = ["naive_24h", "naive_168h", "profile_28d", "lgbm_calendar", "lgbm_weather"]
+MODELS = [
+    "naive_24h",
+    "naive_168h",
+    "profile_28d",
+    "lgbm_calendar",
+    "lgbm_weather",
+    "lgbm_weather_obs",
+    "lgbm_weather_fuel",
+]
 
 
 def skill(wf: pd.DataFrame, n_boot: int = 4000) -> dict:
@@ -231,8 +239,34 @@ def monthly_skill(wf: pd.DataFrame, n_boot: int = 1500) -> list[dict]:
     return rows
 
 
-def interval_report(wf: pd.DataFrame) -> dict:
+def conformalize(
+    wf: pd.DataFrame, window_days: int = 60, min_days: int = 14, level: float = 0.8
+) -> pd.DataFrame:
+    """Conformalised quantile regression, rolling: widen (or narrow) [q10, q90] by the empirical
+    quantile of past misses. Day D is calibrated only on days before D, so nothing leaks.
+    Adds q10_cal and q90_cal; days with fewer than `min_days` of history stay NaN."""
+    w = wf.sort_values("ts_utc").copy()
+    day = pd.to_datetime(w["ts_utc"], utc=True).dt.tz_convert("Europe/Berlin").dt.normalize()
+    w["_day"] = day.dt.tz_localize(None)
+    w["_score"] = np.maximum(w["q10"] - w["actual"], w["actual"] - w["q90"])
+    shift = pd.Series(np.nan, index=w.index)
+    for d in sorted(w["_day"].unique()):
+        past = w[(w["_day"] < d) & (w["_day"] >= d - pd.Timedelta(days=window_days))]
+        if past["_day"].nunique() < min_days:
+            continue
+        n = len(past)
+        k = min(1.0, np.ceil((n + 1) * level) / n)
+        shift[w["_day"] == d] = np.quantile(past["_score"], k)
+    w["q10_cal"] = w["q10"] - shift
+    w["q90_cal"] = w["q90"] + shift
+    return w.drop(columns=["_day", "_score"]).loc[wf.index]
+
+
+def interval_report(wf: pd.DataFrame, lo: str = "q10", hi: str = "q90") -> dict:
     """Empirical coverage of the 10-90% prediction interval (nominal 80%)."""
+    if lo != "q10":  # calibrated columns exist only after a warm-up period
+        wf = wf.dropna(subset=[lo, hi])
+    wf = wf.assign(q10=wf[lo], q90=wf[hi])
     inside = (wf["actual"] >= wf["q10"]) & (wf["actual"] <= wf["q90"])
     width = wf["q90"] - wf["q10"]
     reg = (

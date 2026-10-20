@@ -113,49 +113,49 @@ table fct_market_hourly
 		summarizeBy: none
 		sourceColumn: renewable_share
 
+	/// Mean day-ahead price in EUR/MWh over the selected hours.
 	measure 'Avg Price' = AVERAGE(fct_market_hourly[price_eur_mwh])
 		formatString: #,0.00
-		description: Mean day-ahead price in EUR/MWh over the selected hours.
 
+	/// Highest hourly day-ahead price in EUR/MWh.
 	measure 'Max Price' = MAX(fct_market_hourly[price_eur_mwh])
 		formatString: #,0.00
-		description: Highest hourly day-ahead price in EUR/MWh.
 
+	/// Lowest hourly day-ahead price in EUR/MWh.
 	measure 'Min Price' = MIN(fct_market_hourly[price_eur_mwh])
 		formatString: #,0.00
-		description: Lowest hourly day-ahead price in EUR/MWh.
 
+	/// Standard deviation of hourly prices in EUR/MWh.
 	measure 'Price Volatility' = STDEV.P(fct_market_hourly[price_eur_mwh])
 		formatString: #,0.00
-		description: Standard deviation of hourly prices in EUR/MWh.
 
+	/// Number of hours with a negative price.
 	measure 'Negative Price Hours' = CALCULATE(COUNTROWS(fct_market_hourly), fct_market_hourly[price_eur_mwh] < 0)
 		formatString: #,0
-		description: Number of hours with a negative price.
 
+	/// Total grid load in GWh.
 	measure 'Total Load GWh' = DIVIDE(SUM(fct_market_hourly[load_mwh]), 1000)
 		formatString: #,0
-		description: Total grid load in GWh.
 
+	/// Renewable generation divided by total generation.
 	measure 'Renewable Share' = DIVIDE(SUM(fct_market_hourly[gen_renewable_mwh]), SUM(fct_market_hourly[gen_renewable_mwh]) + SUM(fct_market_hourly[gen_conventional_mwh]))
 		formatString: 0.0%
-		description: Renewable generation divided by total generation.
 
+	/// Onshore plus offshore wind divided by total generation.
 	measure 'Wind Share' = DIVIDE(SUM(fct_market_hourly[gen_wind_onshore_mwh]) + SUM(fct_market_hourly[gen_wind_offshore_mwh]), SUM(fct_market_hourly[gen_renewable_mwh]) + SUM(fct_market_hourly[gen_conventional_mwh]))
 		formatString: 0.0%
-		description: Onshore plus offshore wind divided by total generation.
 
+	/// Solar divided by total generation.
 	measure 'Solar Share' = DIVIDE(SUM(fct_market_hourly[gen_solar_mwh]), SUM(fct_market_hourly[gen_renewable_mwh]) + SUM(fct_market_hourly[gen_conventional_mwh]))
 		formatString: 0.0%
-		description: Solar divided by total generation.
 
+	/// Hours since the newest market row. The alert threshold is 36.
 	measure 'Data Freshness h' = DATEDIFF(MAX(fct_market_hourly[ts_utc]), UTCNOW(), HOUR)
 		formatString: #,0
-		description: Hours since the newest market row. The alert threshold is 36.
 
+	/// Rows in the market fact, one per UTC hour.
 	measure 'Hours Loaded' = COUNTROWS(fct_market_hourly)
 		formatString: #,0
-		description: Rows in the market fact, one per UTC hour.
 
 	partition fct_market_hourly = m
 		mode: import

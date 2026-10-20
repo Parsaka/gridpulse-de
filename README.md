@@ -94,9 +94,10 @@ gridpulse train --test-days 90      # baselines + LightGBM, logs to MLflow, writ
 ```
 
 Evaluated walk-forward over 13 months (monthly retraining, 9,192 out-of-sample hours), LightGBM
-with weather inputs reaches MAE 23.5 vs 30.3 EUR/MWh for "same hour yesterday": **22% lower
-(95% interval 18% to 26%)**. That uses observed weather as a forecast proxy, so it is an upper
-bound (see the noise test in the analysis). Details and limits:
+with the weather forecast issued the day before (Open-Meteo archive) reaches MAE 23.6 vs 30.3
+EUR/MWh for "same hour yesterday": **22% lower (95% interval 17% to 26%)**. Observed weather would
+give the same (23.5), so the forecast loses almost nothing; adding last month's gas and coal prices
+gives 22.6 (25%). Details and limits:
 [docs/model-card.md](docs/model-card.md).
 
 ## Analysis: does the forecast matter economically?
@@ -109,14 +110,15 @@ it wins or fails?* Plain-language one-pager for non-technical readers: [docs/for
 
 | Finding | Number (95% interval) |
 |---|---|
-| Forecast error vs yesterday, walk-forward | 22% lower (18% to 26%), 12 of 13 months better |
-| Battery revenue vs naive forecast (1 MW / 2 MWh) | +128 EUR/MW/year (-1,945 to +2,263): **no measurable difference** |
-| A free 4-week average by hour vs naive forecast | **+3,735 EUR/MW/year (+1,894 to +5,685)**, also above the model (+3,606), despite a *worse* MAE |
-| Weather model vs naive at 1 h / 4 h battery | -1,161 (spans zero) / **+4,000 (+1,635 to +6,414)** |
+| Forecast error vs yesterday, walk-forward, real day-before weather forecast | 22% lower (17% to 26%), 12 of 13 months better |
+| Battery revenue vs naive forecast (1 MW / 2 MWh) | -460 EUR/MW/year (-2,588 to +1,707): **no measurable difference** |
+| A free 4-week average by hour vs naive forecast | **+3,735 EUR/MW/year (+1,894 to +5,685)**, also above the model (+4,194), despite a *worse* MAE |
+| Weather model vs naive at 1 h / 4 h battery | **-1,315 (-2,639 to -80, worse)** / **+3,826 (+1,433 to +6,279)** |
 | Naive forecast as share of perfect-foresight revenue | 86% |
 | Price at equal residual load, Aug-Oct 2026 vs 2025 | +70 EUR/MWh (65 to 75) |
 | Negative-price chance when residual load <= 8 GW | 67% (2025) to 41% (2026) |
-| Nominal 80% forecast interval, actual coverage | 70% |
+| Nominal 80% forecast interval, actual coverage | 69% as trained, 79% after rolling conformal calibration |
+| Gas explains the +70 EUR/MWh price gap | gas 11.1 to 23.3 USD/mmbtu; 5.6 EUR/MWh per USD/mmbtu (3.3 to 6.8, R2 0.76) implies +68 |
 | Price effect of 1 GW more wind / solar | -3.0 / -3.3 EUR/MWh (wind and solar explain 31 of the 67 points of price variation explained) |
 | Model gain in winter vs spring | 6% (interval includes zero) vs 33% |
 | Solar owner: price received vs average | 54% overall, 26% in April 2026 |

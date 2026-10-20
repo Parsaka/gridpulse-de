@@ -15,15 +15,20 @@ validation block for early stopping). 95% day-block bootstrap intervals, 383 day
 | naive: same hour yesterday | 30.3 [28.1, 32.3] | baseline |
 | naive: same hour last week | 38.6 | -28% (-38% to -18%) |
 | LightGBM, calendar + lags only | 28.8 | +4.9% (-0.2% to +9.4%): interval includes zero |
-| LightGBM, + observed weather | **23.5** [22.3, 24.8] | **+22% (+18% to +26%)** |
+| LightGBM, + observed weather (reference) | 23.5 [22.3, 24.8] | +22% (+18% to +26%) |
+| LightGBM, + day-before weather forecast (**headline**) | **23.6** | **+22% (+17% to +26%)** |
+| LightGBM, + forecast weather + last month's gas and coal price | 22.6 | +25% (+21% to +29%) |
 
 - 12 of 13 months are better than the baseline in the point estimate (8 with an interval
   excluding zero); December 2025 was slightly worse (not significant).
-- Weather noise test (illustrative Gaussian noise on the weather inputs): gain 20% at 25% noise,
-  17% at 50%, 4% (interval includes zero) at 100%.
-- The 10/90% quantile interval covers 70% of hours instead of 80%; in price spikes only 32%.
+- The weather input of the headline model is the forecast issued the day before (Open-Meteo
+  Previous Runs archive, nine-station mean, CC BY 4.0), not observed weather. Weather noise
+  stress test on the observed-weather model: gain 20% at 25% noise, 17% at 50%, 4% at 100%; the
+  real forecast is far better than that stress level.
+- The 10/90% quantile interval covers 69% of hours instead of 80% as trained; rolling conformal
+  calibration (60-day window, no look-ahead) lifts it to 79% at the cost of a wider interval.
 - Economic value: no measurable difference in battery revenue versus the naive forecast
-  (+128 EUR/MW/year, interval -1,945 to +2,263 for a 1 MW / 2 MWh battery). A free 4-week average
+  (-460 EUR/MW/year, interval -2,588 to +1,707 for a 1 MW / 2 MWh battery). A free 4-week average
   by hour earns +3,735 EUR/MW/year more than yesterday despite a higher MAE (31.8). See
   [analysis.md](analysis.md).
 

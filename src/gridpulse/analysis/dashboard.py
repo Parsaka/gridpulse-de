@@ -151,7 +151,7 @@ def _skill(res: dict) -> go.Figure:
         ("same hour yesterday", sk["baseline"], GREY),
         ("4-week average by hour", sk["models"]["profile_28d"], PURPLE),
         ("model without weather", sk["models"]["lgbm_calendar"], TEAL),
-        ("model with observed weather", sk["models"]["lgbm_weather"], BLUE),
+        ("model with weather forecast", sk["models"]["lgbm_weather"], BLUE),
     ]
     fig = go.Figure(
         go.Bar(
@@ -385,11 +385,11 @@ def build_dashboard(res: dict, df: pd.DataFrame, wf: pd.DataFrame, path: str | P
     ]
     notes = [
         "Monthly average price with the number of negative and spike hours.",
-        "Holding residual load fixed, the price level moved up by far more than any change in demand or renewables explains: fuel and CO2 prices are not in the data.",
+        "Holding residual load fixed, the price level moved up by far more than demand or renewables explain; the gas price roughly doubled over the same months and accounts for about the same amount.",
         "Every month and hour with at least one negative price; the pattern is solar-driven.",
         "Same weather-driven surplus, but fewer negative prices in 2026: the market absorbs surplus better (cause not identified here).",
-        "Walk-forward: every month predicted by models trained only on earlier data. The weather model uses OBSERVED weather as a stand-in for a forecast, so this is an upper bound.",
-        "Actual versus the weather model and yesterday's price, with the model's 10-90% interval (which is too narrow: about 70% coverage).",
+        "Walk-forward: every month predicted by models trained only on earlier data. The weather input is the real forecast issued the day before; observed weather would score almost the same.",
+        "Actual versus the weather model and yesterday's price, with the model's 10-90% interval (about 70% coverage as trained, about 79% after conformal calibration).",
         "A battery scheduled from each forecast and paid at actual prices. A lower error does not automatically mean higher revenue: a plain 4-week average by hour earns more than the model at 2 MWh.",
         "Same strategies over time: the lines separate in the volatile spring and autumn weeks.",
         "Battery duration changes the answer: the model only pulls clearly ahead of yesterday at 4 h, where the free average keeps up with it.",

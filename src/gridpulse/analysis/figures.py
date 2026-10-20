@@ -165,7 +165,7 @@ def fig_skill(res, df, path):
         ("naive_24h", "same hour\nyesterday", C["naive"], sk["baseline"]),
         ("profile_28d", "4-week average\nby hour", C["profile"], sk["models"]["profile_28d"]),
         ("lgbm_calendar", "model without\nweather", C["calendar"], sk["models"]["lgbm_calendar"]),
-        ("lgbm_weather", "model with\nobserved weather", C["model"], sk["models"]["lgbm_weather"]),
+        ("lgbm_weather", "model with weather\nforecast", C["model"], sk["models"]["lgbm_weather"]),
     ]
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.8), gridspec_kw={"width_ratios": [1, 1.25]})
     for i, (_, _lab, col, m) in enumerate(models):
@@ -213,9 +213,12 @@ def fig_noise(res, df, path):
     ax.axhline(0, color="#111827", lw=1)
     ax.set_xlabel("noise added to weather inputs (% of each feature's standard deviation)")
     ax.set_ylabel("error reduction vs yesterday (%)")
-    ax.set_title("The gain depends on how good the weather forecast is")
+    ax.set_title("Stress test: the gain would shrink if the weather input were much worse")
     ax.legend()
-    note = SOURCE + " Noise is illustrative, not calibrated to real forecast errors."
+    note = (
+        SOURCE
+        + " Noise is added to the observed-weather model: a stress test, not a forecast-error model. The real day-before forecast loses almost nothing."
+    )
     return _finish(fig, path, note)
 
 
@@ -331,22 +334,33 @@ def fig_battery(res, df, path):
 
 
 def fig_interval(res, df, path):
-    ir = res["forecast"]["interval"]
-    reg = pd.DataFrame(ir["by_regime"])
-    fig, ax = plt.subplots(figsize=(8.5, 4.6))
-    ax.bar(range(len(reg)), 100 * reg["coverage"], color=C["model"])
+    ir, ic = res["forecast"]["interval_raw_same_days"], res["forecast"]["interval_calibrated"]
+    raw = pd.DataFrame(ir["by_regime"]).set_index("regime")
+    cal = pd.DataFrame(ic["by_regime"]).set_index("regime")
+    fig, ax = plt.subplots(figsize=(9, 4.8))
+    x = np.arange(len(raw))
+    ax.bar(x - 0.2, 100 * raw["coverage"], 0.4, color=C["naive"], label="as trained")
+    ax.bar(
+        x + 0.2,
+        100 * cal.reindex(raw.index)["coverage"],
+        0.4,
+        color=C["model"],
+        label="after rolling conformal calibration",
+    )
     ax.axhline(100 * ir["nominal"], color="#111827", ls="--", label="nominal 80%")
     ax.set_xticks(
-        range(len(reg)),
-        [f"{r}\n(n={n})" for r, n in zip(reg["regime"], reg["n"], strict=True)],
-        fontsize=8,
+        x, [f"{r}\n(n={n})" for r, n in zip(raw.index, raw["n"], strict=True)], fontsize=8
     )
     ax.set_ylabel("actual price inside the 10-90% interval (%)")
     ax.set_title(
-        f"The prediction interval is too narrow: {100 * ir['coverage']:.0f}% coverage, not 80%"
+        f"Calibration lifts coverage from {100 * ir['coverage']:.0f}% to {100 * ic['coverage']:.0f}% (target 80%)"
     )
-    ax.legend()
-    return _finish(fig, path)
+    ax.legend(loc="lower left", fontsize=8)
+    note = (
+        "Regimes are defined by the realised price, so low coverage in spikes is partly by construction. "
+        + SOURCE
+    )
+    return _finish(fig, path, note)
 
 
 def fig_cumulative(res, df, path):
@@ -459,6 +473,9 @@ def make_figures(res: dict, df: pd.DataFrame, wf: pd.DataFrame, out_dir: str | P
         ff.fig_battery_factors(res, df, out / "19_battery_by_season_weather.png"),
         ff.fig_calibration(res, df, wf, out / "20_actual_vs_forecast.png"),
     ]
+    fuel_fig = ff.fig_fuel(res, df, out / "21_gas_and_price_level.png")
+    if fuel_fig:
+        paths.append(fuel_fig)
     if res["forecast"]["noise"]:
         paths.insert(5, fig_noise(res, df, out / "06_noise_sensitivity.png"))
     return paths

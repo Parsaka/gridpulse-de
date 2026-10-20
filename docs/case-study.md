@@ -25,17 +25,19 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - Pipeline: daily chain runs ingestion to dbt tests to forecast logging in one Airflow DAG.
 - Central question: is a public-data day-ahead forecast good enough to matter economically for a
   battery operator? Answered in [analysis.md](analysis.md) with a 13-month walk-forward test.
-- Model, walk-forward over 9,192 out-of-sample hours: MAE 23.5 EUR/MWh with observed weather vs
-  30.3 for "same hour yesterday" (22% lower, 95% interval 18% to 26%); without weather the gain
+- Model, walk-forward over 9,192 out-of-sample hours: MAE 23.6 EUR/MWh with the real day-before weather forecast
+  vs 30.3 for "same hour yesterday" (22% lower, 95% interval 17% to 26%; observed weather gives the
+  same); without weather the gain
   is 4.9% and the interval includes zero.
-- Economic value: a 1 MW / 2 MWh battery scheduled from the model earns +128 EUR/MW/year versus the
-  naive forecast (interval -1,945 to +2,263), i.e. no measurable difference; the naive forecast
+- Economic value: a 1 MW / 2 MWh battery scheduled from the model earns -460 EUR/MW/year versus the
+  naive forecast (interval -2,588 to +1,707), i.e. no measurable difference; the naive forecast
   already reaches 86% of perfect-foresight revenue.
 - A free alternative wins: a plain 4-week average by hour of day, with a worse error (MAE 31.8),
   earns +3,735 EUR/MW/year more than yesterday (interval +1,894 to +5,685) and more than the model.
-  The model only pulls clearly ahead of yesterday for a 4 h battery (+4,000, interval +1,635 to
-  +6,414), where the free average keeps up with it.
-- Market findings: at equal residual load, Aug-Oct 2026 prices are 70 EUR/MWh above 2025;
+  The model only pulls clearly ahead of yesterday for a 4 h battery (+3,826, interval +1,433 to
+  +6,279), where the free average keeps up with it.
+- Market findings: at equal residual load, Aug-Oct 2026 prices are 70 EUR/MWh above 2025, and the
+  monthly gas price (11.1 to 23.3 USD/mmbtu) implies about 68 of it;
   negative prices at low residual load fell from 67% to 41% of hours.
 - API on one laptop container: 1000 requests at concurrency 20, all 200, p95 829 ms.
 - Failure drill (database stopped): readiness failed in about 20 s, alert fired in about 96 s,
@@ -45,9 +47,11 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 - The first model lost to the naive baseline. Prices in the test period were ~48% above the
   training mean and trees cannot extrapolate levels. Predicting the change versus yesterday fixed
   most of it, chosen on validation data only.
-- The headline accuracy gain uses observed weather as a stand-in for a forecast, so it is an upper
-  bound; a noise test shows it shrinks to 4% when the weather input is very noisy. A shadow log
-  measures real forecasts going forward.
+- I first evaluated with observed weather as a stand-in for a forecast and called the result an
+  upper bound. Archived day-before forecasts (Open-Meteo) later showed the stand-in cost almost
+  nothing (23.5 vs 23.6 MAE), so my noise test had been far too pessimistic.
+- The Power BI model first used a measure property that Power BI's own parser rejects. Schema and
+  unit tests passed; only loading it with Desktop's library found it.
 - A 22% lower error turned out to be worth nothing for a 2 MWh battery on the day-ahead market, and
   the model lost to a four-week average on revenue. Reporting
   that, instead of only the accuracy number, was the point of asking an economic question first.
@@ -59,7 +63,8 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 
 ## Not done, said plainly
 - Only the Azure storage, Key Vault, logging and budget are deployed (Terraform, Azure for Students). Airflow, PostgreSQL and the API still run locally; nothing runs in the cloud on a schedule.
-- Power BI report is generated and schema-validated but its rendering after a refresh was not
-  verified by me (needs the database credentials in Desktop).
-- No gas or CO2 price inputs. Quantile intervals under-cover (70% instead of 80%).
+- Power BI: the model loads in Desktop's own parser and the report opens with all pages; a data
+  refresh needs the database credentials, so visuals with data are verified only as far as
+  docs/powerbi.md says.
+- No carbon price, and gas only monthly. Interval calibration lags abrupt market shifts.
 - Battery model: day-ahead only, one cycle per day, no intraday or balancing revenue.
