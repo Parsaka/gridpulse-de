@@ -29,6 +29,6 @@ linked documents for numbers and limits.
 
 ### Known limits
 - No hosted API and no long-lived cloud database; the scheduled jobs use a throw-away Postgres.
-- The shadow log started on 2026-10-21; scored hours accumulate day by day.
+- The shadow log started on 2026-10-21. Its first 48 scored hours are worse than yesterday's price (MAE 70.1 vs 53.5); two days are too few to judge.
 - No carbon price; gas price is monthly. One market, about two years of data.
 - Power BI Service publishing is not done (needs an account).

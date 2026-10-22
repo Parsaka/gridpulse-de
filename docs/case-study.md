@@ -64,7 +64,7 @@ model it, forecast, serve, monitor, and show the results, with honest numbers at
 
 ## Not done, said plainly
 - In Azure: storage (bronze and state), Key Vault, logging and budget (Terraform, Azure for Students). The pipeline runs on a schedule in GitHub Actions against that storage; Airflow, the API and a long-lived Postgres are not hosted anywhere (the cloud jobs use a throw-away Postgres).
-- The shadow log started on 2026-10-21, so scored forecast hours accumulate day by day; it is too early for a verdict.
+- The shadow log started on 2026-10-21. Its first 48 scored hours (21 and 22 Oct) are **worse** than yesterday's price (MAE 70.1 vs 53.5): two volatile days at record price levels, too few to judge, but not the confirmation I wanted. It is reported as measured.
 - Power BI: verified in Desktop with real data on all five pages and the numbers match the analysis
   (screenshots in docs/powerbi.md). Publishing to the Power BI service is not done (needs an
   account).

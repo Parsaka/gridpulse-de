@@ -48,14 +48,24 @@ Read more: [plain-language summary](docs/for-business.md) · [full analysis](doc
 * Verified: CI (7 jobs) green; the daily and weekly cloud workflows ran successfully on 2026-10-21;
   the Power BI report opened in Desktop with real data.
 * The cloud jobs use a throw-away Postgres; the API is **not hosted 24/7**.
-* The shadow forecast log started on 2026-10-21; scored hours accumulate day by day.
+* **Live check, so far negative:** First scored shadow hours (21 and 22 Oct 2026, 48 hours): model MAE 70.1 against 53.5 EUR/MWh for yesterday's price (skill -31%). That is two days at record price levels (about 200 EUR/MWh), far too few to judge, and it does not confirm the walk-forward result (+22% over 9,192 hours); it is reported as measured and the log keeps growing.
 * No carbon price; gas price is monthly; one market, about two years of data.
 
 ## Screenshots (from the running system)
 
-| Airflow: daily DAG, all tasks green | Grafana: API health dashboard |
-|---|---|
-| ![Airflow daily DAG](docs/images/airflow-daily-dag.jpg) | ![Grafana API health](docs/images/grafana-api-health.jpg) |
+**Cloud:** the daily pipeline on GitHub Actions (two runs started by the cron trigger on their own,
+one by hand; the shown duration includes GitHub's queue time, the work itself takes about 4 minutes).
+
+![Daily pipeline runs](docs/img/ops-github-actions-daily.png)
+
+**Monitoring:** Grafana API health and the six Prometheus alert rules (all inactive while healthy).
+
+![Grafana API health](docs/img/ops-grafana.png)
+![Prometheus alert rules](docs/img/ops-prometheus-alerts.png)
+
+**Orchestration (local):** the Airflow daily DAG, all tasks green.
+
+![Airflow daily DAG](docs/images/airflow-daily-dag.jpg)
 
 Power BI report pages are in [docs/powerbi.md](docs/powerbi.md).
 
