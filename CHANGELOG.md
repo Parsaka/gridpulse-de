@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.1 (2026-10-23)
+
+Final review pass; no behaviour change in the pipeline.
+
+- Figures: stale cause note removed from the price-gap chart (gas explains it), overlapping labels and
+  legend fixed, percentages round half up; all 21 figures regenerated.
+- README rewritten for a first-time reader (plain-language summary, badges, honest status).
+- Scheduled cron runs verified (2026-10-21 and 2026-10-22); first live shadow scores reported as
+  measured (48 hours, worse than yesterday's price; too few to judge).
+- Monitoring screenshots (GitHub Actions, Grafana, Prometheus alert rules); Grafana freshness panel
+  renamed and explained.
+- Repository made public with secret scanning and push protection enabled.
+
 ## 1.0.0 (2026-10-21)
 
 First complete version. Every claim below is backed by a test, a CI job or a measured run; see the
