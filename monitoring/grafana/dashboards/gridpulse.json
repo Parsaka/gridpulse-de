@@ -10,7 +10,7 @@
      "datasource": {"type": "prometheus", "uid": "prometheus"},
      "targets": [{"expr": "gridpulse_db_up", "refId": "A"}],
      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}]}}},
-    {"id": 2, "type": "stat", "title": "Data freshness (h)", "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+    {"id": 2, "type": "stat", "title": "Newest price vs now (h)", "description": "Negative means prices for the coming hours are already loaded (day-ahead). The DataStale alert fires above 36 h.", "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
      "datasource": {"type": "prometheus", "uid": "prometheus"},
      "targets": [{"expr": "gridpulse_data_freshness_hours", "refId": "A"}],
      "fieldConfig": {"defaults": {"unit": "h", "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 24}, {"color": "red", "value": 36}]}}}},

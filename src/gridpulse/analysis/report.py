@@ -6,7 +6,11 @@ FIG = "analysis/figures"
 
 
 def _pct(x: float, d: int = 0) -> str:
-    return f"{100 * x:.{d}f}%"
+    """Percent, rounded half away from zero (Python's format turns 44.5 into 44)."""
+    scale = 10**d
+    value = 100 * x * scale
+    rounded = int(value + 0.5) if value >= 0 else -int(-value + 0.5)
+    return f"{rounded / scale:.{d}f}%"
 
 
 def _ci(ci, fmt="{:+,.0f}") -> str:

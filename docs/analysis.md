@@ -213,7 +213,7 @@ This is an explanation consistent with the data, not a proven mechanism.
 
 Revenue is lumpy: the best 38 days earn 24% of the
 perfect-foresight total, and the weather model beats yesterday on only
-44% of days, with gains (5,607 EUR) and
+45% of days, with gains (5,607 EUR) and
 losses (-6,088 EUR) almost cancelling over the period.
 
 ### Does battery size change the answer?

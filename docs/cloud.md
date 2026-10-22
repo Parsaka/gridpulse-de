@@ -55,9 +55,18 @@ model never replaces the published one; the run fails and alerts instead.
 | Weekly retrain, `workflow_dispatch` on `main` | all steps green; model published (skill gate passed) | about 8 min |
 | Daily, `workflow_dispatch` on `main` | dbt 37 pass, 1 warning; shadow log restored (24 rows from the previous run), tomorrow's forecast logged, state pushed | about 4 min |
 
-Before that, both flows were rehearsed from a laptop against the same storage account. What is
-**not** yet shown: a scheduled (cron) trigger firing on its own, and any scored shadow hours (the
-log starts on 2026-10-21; scoring needs the following day's prices).
+Before that, both flows were rehearsed from a laptop against the same storage account.
+
+Since then the **scheduled (cron) trigger has fired on its own** on 2026-10-21 and 2026-10-22 and both
+runs succeeded (about 4 minutes of work each; GitHub starts scheduled runs late, here about 5 hours
+after the 09:00 UTC cron time, so the forecast is issued in the afternoon).
+
+### First live scores
+First scored shadow hours (21 and 22 Oct 2026, 48 hours): model MAE 70.1 against 53.5 EUR/MWh for yesterday's price (skill -31%). That is two days at record price levels (about 200 EUR/MWh), far too few to judge, and it does not confirm the walk-forward result (+22% over 9,192 hours); it is reported as measured and the log keeps growing. A local check showed that the live feature path and the batch path give identical predictions
+(difference 0.0), so this is not a pipeline bug. On 19 to 22 Oct a model trained on forecast weather
+was worse than yesterday's price on three of four days, whereas one trained on observed weather was
+better on all four; both have about +10% skill over the 90-day test window. Four days cannot separate
+noise from a real regime problem, so the model stays published and the question stays open.
 
 ## Failure handling
 * Every step is a plain CLI command; any non-zero exit fails the run. GitHub emails the repository

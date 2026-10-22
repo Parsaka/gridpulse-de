@@ -103,7 +103,7 @@ def fig_merit_order(res, df, path):
         0.95,
         f"Premium holding residual load and hour of day fixed:\n+{pa['premium_eur_mwh']:.0f} EUR/MWh "
         f"(95% interval {lo:.0f} to {hi:.0f})\nMean residual load was LOWER in 2026 "
-        f"({pa['mean_residual_b']:.1f} vs {pa['mean_residual_a']:.1f} GW):\nthe cause is outside this data (fuel, CO2).",
+        f"({pa['mean_residual_b']:.1f} vs {pa['mean_residual_a']:.1f} GW):\nthe gas price explains it (see the gas chart).",
         transform=ax.transAxes,
         va="top",
         fontsize=9,
@@ -163,9 +163,9 @@ def fig_skill(res, df, path):
     models = [
         ("naive_168h", "same hour\nlast week", C["naive"], sk["models"]["naive_168h"]),
         ("naive_24h", "same hour\nyesterday", C["naive"], sk["baseline"]),
-        ("profile_28d", "4-week average\nby hour", C["profile"], sk["models"]["profile_28d"]),
-        ("lgbm_calendar", "model without\nweather", C["calendar"], sk["models"]["lgbm_calendar"]),
-        ("lgbm_weather", "model with weather\nforecast", C["model"], sk["models"]["lgbm_weather"]),
+        ("profile_28d", "4-week\naverage", C["profile"], sk["models"]["profile_28d"]),
+        ("lgbm_calendar", "no weather\ninput", C["calendar"], sk["models"]["lgbm_calendar"]),
+        ("lgbm_weather", "weather\nforecast", C["model"], sk["models"]["lgbm_weather"]),
     ]
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.8), gridspec_kw={"width_ratios": [1, 1.25]})
     for i, (_, _lab, col, m) in enumerate(models):
@@ -355,7 +355,8 @@ def fig_interval(res, df, path):
     ax.set_title(
         f"Calibration lifts coverage from {100 * ir['coverage']:.0f}% to {100 * ic['coverage']:.0f}% (target 80%)"
     )
-    ax.legend(loc="lower left", fontsize=8)
+    ax.set_ylim(0, 100)
+    ax.legend(loc="upper right", fontsize=8)
     note = (
         "Regimes are defined by the realised price, so low coverage in spikes is partly by construction. "
         + SOURCE
@@ -436,7 +437,7 @@ def fig_day_types(res, df, path):
     conc = res["battery"]["concentration"]
     ax.set_title(
         f"No kind of day where the model clearly wins: it beats yesterday on only "
-        f"{100 * conc['model_beats_naive_share_of_days']:.0f}% of days"
+        f"{int(100 * conc['model_beats_naive_share_of_days'] + 0.5)}% of days"
     )
     return _finish(
         fig, path, "Exploratory: six overlapping groups, no multiplicity correction. " + SOURCE
